@@ -1,0 +1,4 @@
+package ailogic
+
+class CalculateTurn {
+}

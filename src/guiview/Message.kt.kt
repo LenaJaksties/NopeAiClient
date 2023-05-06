@@ -6,7 +6,7 @@ import java.awt.Font
 import java.awt.Image
 import javax.swing.*
 
-fun showMessage(fr: JFrame, content: String) {
+fun showMessage(fr: JFrame, content: String, time: Int) {
     val dialog = JDialog()
     dialog.setSize(900, 50)
 
@@ -34,7 +34,8 @@ fun showMessage(fr: JFrame, content: String) {
 
     dialog.contentPane.add(panel)
 
-    val timer = Timer(1500) { e ->
+    // 1500
+    val timer = Timer(time) { e ->
 
         dialog.dispose()
     }

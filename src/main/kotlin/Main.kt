@@ -45,6 +45,7 @@ fun main(args: Array<String>) {
     val menu = GUIMain()
 
     val gson = Gson()
+
     //val jsonTournamentCreate = gson.toJson(tc)
 
 //    mSocket?.emit("tournament:create", 3, Ack { ackData ->

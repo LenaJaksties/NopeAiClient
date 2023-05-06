@@ -1,16 +1,24 @@
 package guiview
 /*import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken*/
-import javax.swing.*
-import javax.swing.table.DefaultTableModel
-import socketinterface.createTournament
+import socketinterface.*
 import java.awt.*
-import javax.swing.border.Border
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
+import javax.swing.*
+import javax.swing.table.DefaultTableCellRenderer
+import javax.swing.table.DefaultTableModel
 
 
 class GUIMain : JFrame("Nope Card Game") {
 
     private val scoreTable = JTable()
+    private var tournamentTable = JTable()
+
+    private var inTournament = false
+    private var tournamentCreator = false
+
+
     private val menuPanel = JPanel()
     private val scorePanel = JPanel()
     private val crTournamentPanel = JPanel()
@@ -19,28 +27,36 @@ class GUIMain : JFrame("Nope Card Game") {
     private val cardLayout = CardLayout()
 
     init {
-        defaultCloseOperation = JFrame.EXIT_ON_CLOSE
+        defaultCloseOperation = EXIT_ON_CLOSE
         setSize(1080, 720)
 
+        val img = ImageIcon("bin/cover.png")
+        setIconImage(img.getImage())
 
         // Show the window
         isVisible = true
 
         // Create a JPanel to hold the menu items
         menuPanel.layout = BoxLayout(menuPanel, BoxLayout.Y_AXIS)
-        menuPanel.setBackground(Color.WHITE);
+        menuPanel.setBackground(Color.WHITE)
 
         // Create a JLabel for the title
-        val titleLabel = JLabel("Welcome to the Start Menu")
-        titleLabel.alignmentX = JComponent.CENTER_ALIGNMENT
+        val titleLabel = JLabel("Welcome to Nope!™")
+        titleLabel.alignmentX = CENTER_ALIGNMENT
         titleLabel.font = titleLabel.font.deriveFont(24f)
         menuPanel.add(titleLabel)
-
+        val subtitleLabel = JLabel("THE KNOCKOUT CARD GAME")
+        subtitleLabel.alignmentX = CENTER_ALIGNMENT
+        subtitleLabel.font = titleLabel.font.deriveFont(16f)
+        menuPanel.add(subtitleLabel)
+        menuPanel.add(Box.createRigidArea(Dimension(0,40)))
         // Create a JButton for each menu item
         val items = listOf("Create Tournament", "Join Tournament", "High Score List","game room")
         for (item in items) {
             val button = JButton(item)
-            button.alignmentX = JComponent.CENTER_ALIGNMENT
+            button.alignmentX = CENTER_ALIGNMENT
+            button.preferredSize = Dimension(400,70)
+            button.maximumSize = Dimension(800, 70)
             button.setForeground(Color.BLACK)                    // Vordergrundfarbe auf "rot" setzen
             button.background = Color(233,196,183) // Hintergrundfarbe auf "weiß" setzen
             button.isBorderPainted = false
@@ -52,6 +68,7 @@ class GUIMain : JFrame("Nope Card Game") {
             }
             if(item == "Join Tournament"){
                 button.addActionListener{
+                    updateTournamentList()
                     cardLayout.show(contentPane, "tournamentLobby")
                 }
             }
@@ -73,12 +90,15 @@ class GUIMain : JFrame("Nope Card Game") {
                 }
             }
             menuPanel.add(button)
+            menuPanel.add(Box.createRigidArea(Dimension(0,40)))
+
         }
 
         // Create a JButton to exit the application
         val exitButton = JButton("Exit")
-        exitButton.alignmentX = JComponent.CENTER_ALIGNMENT
+        exitButton.alignmentX = CENTER_ALIGNMENT
         exitButton.background = Color(233,196,183)
+        exitButton.maximumSize = Dimension(400, 45)
         exitButton.addActionListener {
             dispose()
         }
@@ -105,49 +125,19 @@ class GUIMain : JFrame("Nope Card Game") {
         scorePanel.add(returnButton, BorderLayout.SOUTH)
 
 
-
-
         initTournamentPanel()
 
-
-
-
-
-        tournamentLobbyPanel.layout = BorderLayout()
-        // Create a JButton to return to the menu
-        val returnButton3 = JButton("leave Room")
-        returnButton3.addActionListener {
-            cardLayout.show(contentPane, "menu")
-        }
-
-
-
-        val joinTournament = JButton("Join/ Start Tournament")
-        joinTournament.addActionListener {
-            cardLayout.show(contentPane, "game")
-        }
-
-
-        val scrollPane = JScrollPane()
-        scrollPane.background = Color(255,255,255)
-
-
-
-        tournamentLobbyPanel.add(returnButton3, BorderLayout.SOUTH)
-        tournamentLobbyPanel.add(joinTournament, BorderLayout.NORTH)
-        tournamentLobbyPanel.add(scrollPane, BorderLayout.CENTER)
-
-
+        initTournamentLobbyPanel()
 
 
 
         inGamePanel.layout = BorderLayout()
         val returnButton4 = JButton("leave Tournament")
         returnButton4.addActionListener {
+            updateTournamentList()
             cardLayout.show(contentPane, "tournamentLobby")
         }
         inGamePanel.add(returnButton4, BorderLayout.SOUTH)
-
 
 
         // Add the menu and score panels to the frame
@@ -157,6 +147,117 @@ class GUIMain : JFrame("Nope Card Game") {
         contentPane.add(crTournamentPanel, "Create a new Tournament")
         contentPane.add(tournamentLobbyPanel, "tournamentLobby")
         contentPane.add(inGamePanel, "game")
+    }
+
+    private fun initTournamentLobbyPanel() {
+        tournamentLobbyPanel.layout = BorderLayout()
+        // Create a JButton to return to the menu
+        val returnButton3 = JButton("leave Room")
+        returnButton3.font = Font("Arial", Font.BOLD, 14)
+        returnButton3.preferredSize = Dimension(150, 40)
+        returnButton3.background = Color(255,255,255)
+        returnButton3.border = BorderFactory.createEmptyBorder(0, 10, 0, 10)
+
+        returnButton3.addActionListener {
+            cardLayout.show(contentPane, "menu")
+        }
+
+
+        tournamentTable.model =
+            DefaultTableModel(arrayOf("Number", "ID", "Current Size", "Date", "status", "Players"), 0)
+        tournamentTable.fillsViewportHeight = true
+        tournamentTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
+        tournamentTable.rowSelectionAllowed = true
+        tournamentTable.columnSelectionAllowed = false
+        tournamentTable.font = Font("Arial", Font.ITALIC, 16)
+        tournamentTable.gridColor = Color(233,196,183)
+
+
+
+        val scrollPane = JScrollPane(tournamentTable)
+        scrollPane.background = Color(255, 255, 255)
+        scrollPane.verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_ALWAYS
+        tournamentLobbyPanel.add(scrollPane, BorderLayout.CENTER)
+
+
+        // divide main Panel into two by adding a new panel
+        val tempPanel = JPanel()
+        tempPanel.layout = BorderLayout()
+        tempPanel.background = Color(255, 255, 255)
+
+
+        val joinTournament = JButton("Join Tournament")
+        joinTournament.font = Font("Arial", Font.BOLD, 14)
+        joinTournament.preferredSize = Dimension(150, 40)
+        joinTournament.background = Color(233,196,183)
+        joinTournament.border = BorderFactory.createEmptyBorder(0, 0, 0, 0)
+        joinTournament.isBorderPainted = true
+        joinTournament.addActionListener {
+
+            val selectedRowIndex = tournamentTable.selectedRow
+            if (selectedRowIndex != -1) {
+
+                val tournamentId = tournamentList[selectedRowIndex].id
+                // join tournament
+                joinTournament(tournamentId!!)
+
+
+                inTournament = true
+                showMessage(this, "You joined game number: $tournamentId ", 4000)
+                updateTournamentList()
+                cardLayout.show(contentPane, "tournamentLobby")
+
+            } else {
+                showMessage(this, "Please choose the tournament you want to join", 2000)
+            }
+        }
+        val leaveTournament = JButton("Leave Tournament")
+        leaveTournament.font = Font("Arial", Font.BOLD, 14)
+        leaveTournament.preferredSize = Dimension(150, 40)
+        leaveTournament.background = Color(233,196,183)
+        leaveTournament.border = BorderFactory.createEmptyBorder(0, 0, 0, 0)
+        leaveTournament.isBorderPainted = true
+        leaveTournament.addActionListener {
+            if (inTournament) {
+                leaveTournament()
+                showMessage(this, "I guess it worked", 2000)
+                inTournament = false
+                tournamentCreator = false
+                updateTournamentList()
+
+                cardLayout.show(contentPane, "tournamentLobby")
+
+            } else {
+                showMessage(this, "You cannot leave a tournament as you ar not in one", 2000)
+            }
+
+        }
+        val startTournament = JButton("Start Tournament")
+        startTournament.font = Font("Arial", Font.BOLD, 14)
+        startTournament.preferredSize = Dimension(150, 40)
+        startTournament.background = Color(233,196,183)
+        startTournament.border = BorderFactory.createEmptyBorder(0, 0, 0, 0)
+        startTournament.isBorderPainted = true
+        startTournament.addActionListener {
+            if (tournamentCreator) {
+                // startTournament()
+                showMessage(this, "go to game room", 2000)
+                cardLayout.show(contentPane, "game")
+            } else {
+                showMessage(this, "Sorry but only the admin can start a game", 2000)
+            }
+
+        }
+
+        tempPanel.add(joinTournament, BorderLayout.CENTER)
+        tempPanel.add(leaveTournament, BorderLayout.WEST)
+        tempPanel.add(startTournament, BorderLayout.EAST)
+
+
+
+
+        tournamentLobbyPanel.add(returnButton3, BorderLayout.NORTH)
+        tournamentLobbyPanel.add(tempPanel, BorderLayout.SOUTH)
     }
 
     private fun initTournamentPanel() {
@@ -213,11 +314,22 @@ class GUIMain : JFrame("Nope Card Game") {
         createButton.addActionListener {
             val number = tfName.text.toIntOrNull()
             if (number != null) {
-                createTournament(number)
-                cardLayout.show(contentPane, "tournamentLobby")
-                tfName.text = "" // clear textfield
+
+                val tournamentInfoStatus = createTournament(number)
+                if(tournamentInfoStatus.success && tournamentInfoStatus.tournamentId != null){
+
+                    showMessage(this,"Tournament created with ID: ${tournamentInfoStatus.tournamentId}, current size: ${tournamentInfoStatus.currentSize}, best of: ${tournamentInfoStatus.bestOf}",4000)
+                    inTournament = true
+                    tournamentCreator = true
+                    updateTournamentList()
+                    cardLayout.show(contentPane, "tournamentLobby")
+                    tfName.text = "" // clear textfield
+                } else{
+                    showMessage(this,tournamentInfoStatus.error.toString(),4000)
+                }
+
             } else {
-                showMessage(this, "Please enter a valid integer value between 3 and 7.")
+                showMessage(this, "Please enter a valid integer value between 3 and 7.",2000)
 
 
             }
@@ -231,6 +343,7 @@ class GUIMain : JFrame("Nope Card Game") {
         crTournamentPanel.add(returnButton2, BorderLayout.NORTH)
         crTournamentPanel.add(centerPanel, BorderLayout.CENTER)
     }
+
     /*    private fun updateScoreTable() {
             val jsonString = """
                 [
@@ -252,7 +365,39 @@ class GUIMain : JFrame("Nope Card Game") {
                     model.addRow(arrayOf(score.name, score.score))
                 }
         }*/
+    private fun updateTournament(){
+
+        for(i in 0 until tournamentList.size ){
+            val currTour = tournamentList[i]
+            print(currTour)
+
+
+            var players = ""
+            for(j in 0 until currTour.players!!.size){
+                val currP = currTour.players!![j]
+                players  += " ${currP.username} "
+            }
+            val model = tournamentTable.model as DefaultTableModel
+            model.addRow(arrayOf(i, currTour.id, currTour.currentSize, currTour.createdAt, currTour.status, players))
+
+        }
+
+    }
+    private fun updateTournamentList(){
+
+        tournamentTable.model= DefaultTableModel(arrayOf("Number", "ID", "Current Size", "Date", "status", "Players"), 0 )
+        updateTournament()
+        if(inTournament == true){
+            tournamentTable.setEnabled(false)
+        }else{
+            tournamentTable.isEnabled = true
+        }
+    }
+
 }
+
+
+
 
 data class Score(val name: String, val score: Int)
 

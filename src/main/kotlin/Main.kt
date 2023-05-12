@@ -9,6 +9,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import io.socket.client.Ack
 import io.socket.emitter.Emitter
+import nopegamelogic.*
 import org.json.JSONObject
 
 /*
@@ -24,13 +25,19 @@ fun main(args: Array<String>) {
 //    //Register
 //    restapi.registerUser()
 
+
+
     //Login
     // TODO : catch a nullpointer if access token is null
     val token = restapi.userLogin()
 
+    // Create an instance of the StartMenu class
+    val menu = GUIMain()
+
+
     //Socket init
     if(token != null){
-        val mSocket = socketinit(serverURL, token)
+        val mSocket = socketinit(serverURL, token, menu)
         connect()
         restapi.connect(token)
 
@@ -40,9 +47,30 @@ fun main(args: Array<String>) {
 
 
 
+    val testAILogic = AILogic()
 
-    // Create an instance of the StartMenu class
-    val menu = GUIMain()
+    // create handcards
+    val card1 = Card(Type.NUMBER, Color.RED,2,null,null,null)
+    val card2 = Card(Type.NUMBER, Color.RED,1,null,null,null)
+    val card3 = Card(Type.JOKER, Color.YELLOW_BLUE,3,null,null,null)
+    val card4 = Card(Type.NUMBER, Color.BLUE,2,null,null,null)
+    val card5 = Card(Type.NUMBER, Color.RED_BLUE,3,null,null,null)
+    val card6 = Card(Type.JOKER, Color.RED_GREEN,2,null,null,null)
+    val handcards = ArrayList<Card>()
+    handcards.add(card1)
+    handcards.add(card2)
+    handcards.add(card3)
+    handcards.add(card4)
+    handcards.add(card5)
+    handcards.add(card6)
+    // top card and last top card
+    val cardTop = Card(Type.NUMBER, Color.RED_BLUE,3,null,null,null)
+    val cardLastTop = Card(Type.NUMBER, Color.RED,3,null,null,null)
+    var turndata =  TurnInfo(handcards,cardTop,cardLastTop,false)
+
+    var Turnstuff = testAILogic.CalculateTurn(turndata)
+
+    println(Turnstuff)
 
     val gson = Gson()
 

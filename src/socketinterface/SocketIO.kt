@@ -3,14 +3,19 @@ package socketinterface
 import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import guiview.GUIMain
 import io.socket.client.Ack
 import io.socket.client.IO
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
+import nopegamelogic.Player
+import nopegamelogic.Tournament
+import nopegamelogic.TournamentInfo
 import org.json.JSONArray
 import java.net.URI
 import java.net.URISyntaxException
 import java.util.Collections.singletonMap
+import javax.swing.SwingUtilities
 
 
 /*
@@ -19,11 +24,9 @@ import java.util.Collections.singletonMap
  */
 
 // Create an empty ArrayList
-val tournamentList = ArrayList<Tournament>()
+var tournamentList = ArrayList<Tournament>()
 
-
-
-
+var currentTournament = Tournament(null,null,null,null,null,null, null)
 
 
 /*
@@ -32,15 +35,17 @@ val tournamentList = ArrayList<Tournament>()
 
 
 var mSocket : Socket? = null
-
+var guiObject: GUIMain? = null
+var emitter = Emitter.Listener {}
 val gson = Gson()
 
-fun socketinit(serverURL:String, access_token: Accesstoken): Socket?{
+fun socketinit(serverURL:String, access_token: Accesstoken, gui:GUIMain): Socket?{
 
 
     var token = access_token
     val gson = Gson()
     val tokenjwt = gson.toJson(token)
+    guiObject = gui
 
 
     try {
@@ -61,7 +66,11 @@ fun socketinit(serverURL:String, access_token: Accesstoken): Socket?{
 fun connect() {
     val socket = mSocket!!.connect()
     socket.on(Socket.EVENT_CONNECT,{println("Connected")}).on(Socket.EVENT_CONNECT_ERROR, {println(it.joinToString())})
+    // put Socket.On functions here
     getCurrentTournaments()
+    getPlayerInfo()
+
+
 }
 fun disconnect() {
     mSocket!!.disconnect()
@@ -79,9 +88,9 @@ fun emit(event: String, data: String): Emitter?{
 }
 
 
-fun createTournament(number: Int): TournamentCreateInfo{
+fun createTournament(number: Int): TournamentInfo {
 
-    val tournamentInfo = TournamentCreateInfo(null,null,null,false,null)
+    val tournamentInfo = TournamentInfo(null,null,null,false,null)
 
     mSocket?.emit("tournament:create", number, Ack { ackData ->
         // Handle acknowledgement data or failure
@@ -108,6 +117,11 @@ fun createTournament(number: Int): TournamentCreateInfo{
 
                 if (tournamentInfo.tournamentId != null) {
                     println("Tournament created with ID: ${tournamentInfo.tournamentId}, current size: ${tournamentInfo.currentSize}, best of: ${tournamentInfo.bestOf}")
+
+                    currentTournament.id = tournamentInfo.tournamentId
+                    currentTournament.bestOf = tournamentInfo.bestOf
+                    currentTournament.currentSize = tournamentInfo.currentSize
+
                 }else {
                         println("Error: tournament data is missing or incomplete")
                 }
@@ -116,7 +130,7 @@ fun createTournament(number: Int): TournamentCreateInfo{
                 tournamentInfo.error =errorMessage
                 println("Error: tournament creation failed : $errorMessage")
             }
-            println("Acknowledgement received - Success: ${result.toString()}")
+            println("Acknowledgement received - Success: CREATE Tournament ${result.toString()}")
 
         } else {
             // Handle acknowledgement failure
@@ -126,18 +140,12 @@ fun createTournament(number: Int): TournamentCreateInfo{
     Thread.sleep(1000)
     return tournamentInfo
 }
-data class TournamentCreateInfo(
-    var tournamentId: String?,
-    var bestOf: Int?,
-    var currentSize: Int?,
-    var success: Boolean,
-    var error: Any?
-)
 
 
 fun getCurrentTournaments() {
 
-
+    println("Hallo Ich habe etwas empfangen JEEE JEEEE")
+    mSocket?.off("list:tournaments")
     mSocket?.on("list:tournaments", Emitter.Listener { args ->
 
         if (args[0] != null) {
@@ -147,7 +155,9 @@ fun getCurrentTournaments() {
             val jsonTemp = JSONArray(result)
             val tourData = jsonTemp.getJSONObject(0)
             val myArrayList = tourData.getJSONArray("myArrayList")
-            for (i in 0 until myArrayList.length()) {
+            println(myArrayList.toString())
+            val length = myArrayList.length()
+            for (i in 0 until length) {
                 val tournamentData = myArrayList.getJSONObject(i).getJSONObject("map")
                 val id = tournamentData.getString("id")
                 val createdAt = tournamentData.getString("createdAt")
@@ -156,10 +166,10 @@ fun getCurrentTournaments() {
                 val players = ArrayList<Player>()
                 val getPlayerData = tournamentData.getJSONObject("players").getJSONArray("myArrayList")
                 for (j in 0 until getPlayerData.length()) {
-                    val newP = Player(getPlayerData.getJSONObject(j).getJSONObject("map").getString("username"))
+                    val newP = Player(null, getPlayerData.getJSONObject(j).getJSONObject("map").getString("username"))
                     players.add(newP)
                 }
-                val newTournament = Tournament(id, createdAt, currentSize, players, status)
+                val newTournament = Tournament(id, createdAt, currentSize, players, status,null, null)
                 if (newTournament.id != null) {
                     println("New Entry found: ${tournamentList.size} TournamentID: ${newTournament.id}, current size: ${newTournament.currentSize}, createdAt:  ${newTournament.createdAt}, status:  ${newTournament.status}, players:  ${newTournament.players}")
                 } else {
@@ -168,28 +178,86 @@ fun getCurrentTournaments() {
 
                 tournamentList.add(newTournament)
             }
-            println("Received tournaments: ${result.toString()}")
+            //println("Received tournaments: ${result.toString()} \n")
+            SwingUtilities.invokeLater {
+                // update GUI components here
+                guiObject?.updateTournamentList()
+            }
 
         } else {
             println("No tournaments received")
         }
-
     })
 
 }
 
-fun joinTournament(id:String){
+
+fun getPlayerInfo() {
+
+    mSocket?.off("tournament:playerInfo")
+    mSocket?.on("tournament:playerInfo", Emitter.Listener { args ->
+
+        if (args[0] != null) {
+
+            val result = gson.toJson(args)
+            val jsonTemp = JSONArray(result)
+            val tourData = jsonTemp.getJSONObject(0)
+            val myArrayList = tourData.getJSONArray("myArrayList")
+            println(myArrayList.toString())
+            val length = myArrayList.length()
+            for (i in 0 until length) {
+                val tournamentData = myArrayList.getJSONObject(i).getJSONObject("map")
+                val id = tournamentData.getString("id")
+                val createdAt = tournamentData.getString("createdAt")
+                val currentSize = tournamentData.getInt("currentSize")
+                val status = tournamentData.getString("status")
+                val players = ArrayList<Player>()
+                val getPlayerData = tournamentData.getJSONObject("players").getJSONArray("myArrayList")
+                for (j in 0 until getPlayerData.length()) {
+                    val newP = Player(null, getPlayerData.getJSONObject(j).getJSONObject("map").getString("username"))
+                    players.add(newP)
+                }
+                val newTournament = Tournament(id, createdAt, currentSize, players, status,null, null)
+                if (newTournament.id != null) {
+//            currentTournament.id = tournamentInfo.tournamentId
+//            currentTournament.bestOf = tournamentInfo.bestOf
+//            currentTournament.currentSize = tournamentInfo.currentSize
+                    println("TournamentID: ${newTournament.id}, current size: ${newTournament.currentSize}, createdAt:  ${newTournament.createdAt}, status:  ${newTournament.status}, players:  ${newTournament.players}")
+                } else {
+                    println("Error: tournament data is missing or incomplete")
+                }
+
+                tournamentList.add(newTournament)
+            }
+            println("Received PlayerData: ${result.toString()} \n")
+//            SwingUtilities.invokeLater {
+//                // update GUI components here
+//                guiObject?.updateTournamentList()
+//            }
+
+        } else {
+            println("No Player Data received")
+        }
+    })
+
+}
+
+
+fun joinTournament(id:String): TournamentInfo{
+    val tournamentInfo = TournamentInfo(null,null,null,false,null)
     mSocket?.emit("tournament:join", id, Ack { ackData ->
         if (ackData != null) {
             val result = gson.toJson(ackData)
             val jsonArray = JSONArray(result)
 
-            // get data about tournament creation
-//            val getTournamentInfo = jsonArray.getJSONObject(0).getJSONObject("map")
-//            val success = getTournamentInfo.getBoolean("success")
-//            val error = getTournamentInfo.get("error")
+            // get data about tournament that you join
+            val getTournamentInfo = jsonArray.getJSONObject(0).getJSONObject("map")
+            val success = getTournamentInfo.getBoolean("success")
+            val error = getTournamentInfo.get("error")
+            tournamentInfo.success = success
+            if(success){
 
-//            if(success){
+                tournamentInfo.error = error
                 // get tournament data
 //                val getTournamentData = jsonArray.getJSONObject(0).getJSONObject("map").getJSONObject("data").getJSONObject("map")
 //                val tournamentId = getTournamentData.getString("tournamentId")
@@ -202,34 +270,39 @@ fun joinTournament(id:String){
 //                }else {
 //                println("Error: tournament data is missing or incomplete")
 //                }
-//            }else{
-//                val errorMessage = getTournamentInfo.getJSONObject("error").getJSONObject("map").getString("message")
-//                tournamentInfo.error =errorMessage
-//                println("Error: tournament creation failed : $errorMessage")
-//            }
-            println("Acknowledgement received - Success: ${result.toString()}")
+            }else{
+                val errorMessage = getTournamentInfo.getJSONObject("error").getJSONObject("map").getString("message")
+                tournamentInfo.error = errorMessage
+                println("Error: tournament join  failed : $errorMessage")
+            }
+            println("Acknowledgement received - Success: JOIN Tournament  ${jsonArray.toString()}")
             getCurrentTournaments()
         } else {
             // Handle acknowledgement failure
             println("Acknowledgement not received")
         }
     })
+    Thread.sleep(1000)
+    return tournamentInfo
 
 }
 
-fun leaveTournament(){
+fun leaveTournament():TournamentInfo{
+    val tournamentInfo = TournamentInfo(null,null,null,false,null)
     mSocket?.emit("tournament:leave",  Ack { ackData ->
         if (ackData != null) {
             val result = gson.toJson(ackData)
             val jsonArray = JSONArray(result)
 
-            // get data about tournament creation
-//            val getTournamentInfo = jsonArray.getJSONObject(0).getJSONObject("map")
-//            val success = getTournamentInfo.getBoolean("success")
-//            val error = getTournamentInfo.get("error")
+            // get data about tournament that you leave
+            val getTournamentInfo = jsonArray.getJSONObject(0).getJSONObject("map")
+            val success = getTournamentInfo.getBoolean("success")
+            val error = getTournamentInfo.get("error")
+            tournamentInfo.success = success
+            if(success){
 
-//            if(success){
-            // get tournament data
+                tournamentInfo.error = error
+                // get tournament data
 //                val getTournamentData = jsonArray.getJSONObject(0).getJSONObject("map").getJSONObject("data").getJSONObject("map")
 //                val tournamentId = getTournamentData.getString("tournamentId")
 //                val currentSize = getTournamentData.getInt("currentSize")
@@ -241,19 +314,65 @@ fun leaveTournament(){
 //                }else {
 //                println("Error: tournament data is missing or incomplete")
 //                }
-//            }else{
-//                val errorMessage = getTournamentInfo.getJSONObject("error").getJSONObject("map").getString("message")
-//                tournamentInfo.error =errorMessage
-//                println("Error: tournament creation failed : $errorMessage")
-//            }
-            println("Acknowledgement received - Success: ${result.toString()}")
+            }else{
+                val errorMessage = getTournamentInfo.getJSONObject("error").getJSONObject("map").getString("message")
+                tournamentInfo.error = errorMessage
+                println("Error: tournament leave  failed : $errorMessage")
+            }
+            println("Acknowledgement received - Success: LEAVE Tournament ${result.toString()}")
             getCurrentTournaments()
         } else {
             // Handle acknowledgement failure
             println("Acknowledgement not received")
         }
     })
+    Thread.sleep(1000)
+    return tournamentInfo
 }
+
+fun startTournament():TournamentInfo{
+    val tournamentInfo = TournamentInfo(null,null,null,false,null)
+    mSocket?.emit("tournament:start",  Ack { ackData ->
+        if (ackData != null) {
+            val result = gson.toJson(ackData)
+            val jsonArray = JSONArray(result)
+
+            // get data about tournament that you start
+            val getTournamentInfo = jsonArray.getJSONObject(0).getJSONObject("map")
+            val success = getTournamentInfo.getBoolean("success")
+            val error = getTournamentInfo.get("error")
+            tournamentInfo.success = success
+            if(success){
+
+                tournamentInfo.error = error
+                // get tournament data
+//                val getTournamentData = jsonArray.getJSONObject(0).getJSONObject("map").getJSONObject("data").getJSONObject("map")
+//                val tournamentId = getTournamentData.getString("tournamentId")
+//                val currentSize = getTournamentData.getInt("currentSize")
+//                val bestOf = getTournamentData.getInt("bestOf")
+
+
+//                //if (tournamentInfo.tournamentId != null) {
+//                    //println("Tournament created with ID: ${tournamentInfo.tournamentId}, current size: ${tournamentInfo.currentSize}, best of: ${tournamentInfo.bestOf}")
+//                }else {
+//                println("Error: tournament data is missing or incomplete")
+//                }
+            }else{
+                val errorMessage = getTournamentInfo.getJSONObject("error").getJSONObject("map").getString("message")
+                tournamentInfo.error = errorMessage
+                println("Error: tournament start  failed : $errorMessage")
+            }
+            println("Acknowledgement received - Success: START Tournament ${result.toString()}")
+            getCurrentTournaments()
+        } else {
+            // Handle acknowledgement failure
+            println("Acknowledgement not received")
+        }
+    })
+    Thread.sleep(1000)
+    return tournamentInfo
+}
+
 
 //    msocket?.on("list:tournaments", Emitter.Listener { args ->
 //            //System.out.println(args[0]); // info String printen
@@ -277,21 +396,6 @@ fun leaveTournament(){
 //                }
 //            }
 //        })
-
-
-
-data class Tournament(
-    var id: String?,
-    var createdAt: String?,
-    var currentSize: Int?,
-    var players: ArrayList<Player>?,
-    var status: String?
-)
-data class Player(
-    var username: String?
-
-)
-
 
 
 //fun getCurrentTournaments(textArea: JTextArea): JTextArea{

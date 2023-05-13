@@ -15,12 +15,15 @@ data class Tournament(
     var players: ArrayList<Player>?,
     var status: String?,
     var bestOf: Int?,
-    var message: String?
+    var message: String?,
+    var host: Player?,
+    var winner: Player?
 )
 
 data class Player(
     var id: String?,
-    var username: String?
+    var username: String?,
+    var score: Int?
 
 )
 

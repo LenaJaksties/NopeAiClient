@@ -463,11 +463,9 @@ class GUIMain : JFrame("Nope Card Game") {
                     showMessage(this, "You joined game number: $tournamentId ", 4000)
                     //updateTournamentList()
 
-                    var newTournament = Tournament(tournamentList[selectedRowIndex].id,tournamentList[selectedRowIndex].createdAt, tournamentList[selectedRowIndex].currentSize,tournamentList[selectedRowIndex].players, tournamentList[selectedRowIndex].status, tournamentList[selectedRowIndex].bestOf, null )
-
-                    currentTournament = newTournament
+                    currentTournament.status = tournamentList[selectedRowIndex].status
+                    currentTournament.createdAt =tournamentList[selectedRowIndex].createdAt
                     updateCurrentTournamentList()
-                    Thread.sleep(1000)
                     cardLayout.show(contentPane, "game lobby")
                 }
                 else{
@@ -629,7 +627,9 @@ class GUIMain : JFrame("Nope Card Game") {
     }
     private fun updateCurrentTournament(){
         if (currentTournament.id != null){
-
+            if(currentTournament.message!=null){
+                showMessage(this,currentTournament.message.toString(),2000)
+            }
             var players = ""
             if(currentTournament.players != null){
                 for(j in 0 until currentTournament.players!!.size){
@@ -637,14 +637,20 @@ class GUIMain : JFrame("Nope Card Game") {
                     players  += " ${currP.username} "
                 }
             }
+            if(currentTournament.winner != null){
+                //TODO make prettier
+            }
+            if(currentTournament.host != null){
+                //TODO make prettier
+            }
             val model = currentTournamentTable.model as DefaultTableModel
-            model.addRow(arrayOf( currentTournament.id, currentTournament.currentSize, currentTournament.createdAt, currentTournament.status, players, currentTournament.bestOf))
+            model.addRow(arrayOf( currentTournament.id, currentTournament.currentSize, currentTournament.createdAt, currentTournament.status, players, currentTournament.bestOf, currentTournament.message,currentTournament.host,currentTournament.winner))
             println("CURRENT T $currentTournament")
         }
     }
-    private fun updateCurrentTournamentList(){
+    fun updateCurrentTournamentList(){
 
-        currentTournamentTable.model= DefaultTableModel(arrayOf("ID", "Current Size", "Date", "status", "Players", "Best Of"), 0 )
+        currentTournamentTable.model= DefaultTableModel(arrayOf("ID", "Current Size", "Date", "status", "Players", "Best Of", "Last Message","Host", "Winner"), 0 )
         updateCurrentTournament()
 
 

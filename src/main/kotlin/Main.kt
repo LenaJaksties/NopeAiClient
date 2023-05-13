@@ -11,6 +11,7 @@ import io.socket.client.Ack
 import io.socket.emitter.Emitter
 import nopegamelogic.*
 import org.json.JSONObject
+import kotlin.random.Random
 
 /*
  * Main
@@ -64,7 +65,17 @@ fun main(args: Array<String>) {
     handcards.add(card5)
     handcards.add(card6)
     // top card and last top card
-    val cardTop = Card(Type.NUMBER, Color.RED_BLUE,3,null,null,null)
+    val random = Random(System.currentTimeMillis())
+
+// Generate a random Color
+    val randomColor = Color.values()[random.nextInt(Color.values().size)]
+
+// Generate a random Type
+    val randomType = Type.values()[random.nextInt(Type.values().size)]
+
+
+    val cardTop = Card(Type.NUMBER, randomColor, random.nextInt(3) + 1, null, null, null)
+    print(cardTop)
     val cardLastTop = Card(Type.NUMBER, Color.RED,3,null,null,null)
     var turndata =  TurnInfo(handcards,cardTop,cardLastTop,false)
 

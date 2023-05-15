@@ -8,7 +8,6 @@ import com.google.gson.Gson
 
 /*
  * Http Requests - REST API code
- * Klassen mit Infos für die Json Objekte
  */
 
 class RestApi(){
@@ -36,9 +35,9 @@ class RestApi(){
         }
     }
 
-    fun userLogin(): Accesstoken?{
+    fun userLogin(uName: String): Accesstoken?{
         // create Login Object with data and convert to Json with gson
-        val loginOb = Login("summer", "busan1sBe3utiful")
+        val loginOb = Login(uName, "busan1sBe3utiful")
         val gson = Gson()
         val jsonLogRequest = gson.toJson(loginOb)
         val client = HttpClient.newHttpClient()
@@ -101,25 +100,25 @@ class RestApi(){
         return matchResult?.groupValues?.getOrNull(1)
     }
 
-    fun getData(): String? {
-        val accessToken = userLogin()
-        if (accessToken == null) {
-            return null
-        }
-
-        val client = HttpClient.newBuilder()
-
-        val request = HttpRequest.newBuilder()
-            .uri(URI.create("https://nope-server.azurewebsites.net/api/data"))
-            .header("Content-Type", "application/json")
-            .header("Authorization", "Bearer $accessToken")
-            .GET()
-            .build()
-
-        //val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-        //if (response.statusCode() == 200) {
-        //    return response.body()
-        //}
-        return null
-    }
+//    fun getData(): String? {
+//        val accessToken = userLogin()
+//        if (accessToken == null) {
+//            return null
+//        }
+//
+//        val client = HttpClient.newBuilder()
+//
+//        val request = HttpRequest.newBuilder()
+//            .uri(URI.create("https://nope-server.azurewebsites.net/api/data"))
+//            .header("Content-Type", "application/json")
+//            .header("Authorization", "Bearer $accessToken")
+//            .GET()
+//            .build()
+//
+//        //val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+//        //if (response.statusCode() == 200) {
+//        //    return response.body()
+//        //}
+//        return null
+//    }
 }

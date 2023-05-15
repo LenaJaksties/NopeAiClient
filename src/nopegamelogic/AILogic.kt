@@ -4,16 +4,16 @@ import java.lang.Integer.sum
 
 class AILogic{
 
-    fun CalculateTurn(turndata: TurnInfo):Move{
-        var turnmove = Move(null,null,null,null,"Because I can")
+    fun calculateTurn(turnData: GameState):Move{
+        var turnmove = Move(null,null,null,null,"Because I can!")
         // see card on top
 
 
         // see if player has possible card he needs to send and place them in a new ArrayList
-        val fittingCardInDeck = findMatchingCards(turndata.handCards, turndata.lastCard, turndata.preLastCard)
+        val fittingCardInDeck = findMatchingCards(turnData.hand!!, turnData.topCard!!, turnData.lastTopCard)
 
         // define Type of move
-        if(fittingCardInDeck.isEmpty() && turndata.secondTurn == true) {
+        if(fittingCardInDeck.isEmpty() && turnData.secondTurn == true) {
             turnmove.type = MoveType.NOPE
         } else if(fittingCardInDeck.isEmpty()){
             turnmove.type = MoveType.TAKE
@@ -24,19 +24,19 @@ class AILogic{
         if(turnmove.type == MoveType.PUT){
 
             // select cards to send
-            val cardsToSend = calculateSmartDecision(fittingCardInDeck, turndata)
+            val cardsToSend = calculateSmartDecision(fittingCardInDeck, turnData)
             println(cardsToSend)
             if(cardsToSend.isEmpty() || cardsToSend.size > 3){
                 println("Something Went Wrong Choosing a Card to Send")
             } else if(cardsToSend.size == 1){
-                turnmove.card1 = cardsToSend[0]
+                turnmove.card1 = Card(Type.valueOf(cardsToSend[0].type.type), Color.valueOf(cardsToSend[0].color.color),  cardsToSend[0].value,null,null,null)
             }else if(cardsToSend.size == 2){
-                turnmove.card1 = cardsToSend[0]
-                turnmove.card2 = cardsToSend[1]
+                turnmove.card1 = Card(Type.valueOf(cardsToSend[0].type.type), Color.valueOf(cardsToSend[0].color.color),  cardsToSend[0].value,null,null,null)
+                turnmove.card2 = Card(Type.valueOf(cardsToSend[1].type.type), Color.valueOf(cardsToSend[1].color.color),  cardsToSend[1].value,null,null,null)
             }else{
-                turnmove.card1 = cardsToSend[0]
-                turnmove.card2 = cardsToSend[1]
-                turnmove.card3 = cardsToSend[2]
+                turnmove.card1 = Card(Type.valueOf(cardsToSend[0].type.type), Color.valueOf(cardsToSend[0].color.color), cardsToSend[0].value,null,null,null)
+                turnmove.card2 = Card(Type.valueOf(cardsToSend[1].type.type), Color.valueOf(cardsToSend[1].color.color), cardsToSend[1].value,null,null,null)
+                turnmove.card3 = Card(Type.valueOf(cardsToSend[2].type.type), Color.valueOf(cardsToSend[2].color.color), cardsToSend[2].value,null,null,null)
             }
 
         }
@@ -165,7 +165,7 @@ class AILogic{
     }
 
 
-    private fun calculateSmartDecision(fittingCardInDeck: ArrayList< ArrayList<Card>>, turndata: TurnInfo): ArrayList<Card> {
+    private fun calculateSmartDecision(fittingCardInDeck: ArrayList< ArrayList<Card>>, turndata: GameState): ArrayList<Card> {
         var bestMoveCards = ArrayList<Card>()
 
         bestMoveCards.addAll(fittingCardInDeck[0])

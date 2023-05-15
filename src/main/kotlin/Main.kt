@@ -1,16 +1,8 @@
 
 import guiview.GUIMain
-import javax.swing.*
 import socketinterface.*
-import io.socket.client.IO
-import io.socket.client.Socket
 import com.google.gson.Gson
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
-import io.socket.client.Ack
-import io.socket.emitter.Emitter
 import nopegamelogic.*
-import org.json.JSONObject
 import kotlin.random.Random
 
 /*
@@ -77,11 +69,13 @@ fun main(args: Array<String>) {
     val cardTop = Card(Type.NUMBER, randomColor, random.nextInt(3) + 1, null, null, null)
     print(cardTop)
     val cardLastTop = Card(Type.NUMBER, Color.RED,3,null,null,null)
-    var turndata =  TurnInfo(handcards,cardTop,cardLastTop,false)
 
-    var Turnstuff = testAILogic.CalculateTurn(turndata)
 
-    println(Turnstuff)
+    var turnData =  GameState(null,null,cardTop,cardLastTop,null,null,handcards,null,null,null,null,null,null,null,true,null,null)
+
+    var TurnStuff = testAILogic.calculateTurn(turnData)
+
+    println(TurnStuff)
 
     val gson = Gson()
 

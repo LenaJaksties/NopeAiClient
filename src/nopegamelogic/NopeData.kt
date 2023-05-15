@@ -37,11 +37,6 @@ data class InvitationReply (
     var id: String
 )
 
-//data class MatchInfo(
-//    var message: String?,
-//    var tournamentId: String?,
-//    var match: Match?
-//)
 data class Match(
     var message: String?,
     var tournamentId: String?,
@@ -51,7 +46,6 @@ data class Match(
     var status: String?,
     var opponents: ArrayList<Player>?,
     var winner: Player?
-
 
 )
 data class GameMoveNotice(
@@ -76,7 +70,6 @@ data class GameState(
     var secondTurn: Boolean?,
     var message: String?,
     var winner: Player?
-
 )
 
 data class Card(
@@ -86,15 +79,27 @@ data class Card(
     var select: Int?,
     var selectValue: Int?,
     var selectedColor: String?
-)
+){
+    fun getType(): String {
+        return type.type.toLowerCase()
+    }
+
+    fun getColor(): String {
+        return color.color.toLowerCase()
+    }
+}
 
 data class Move(
-    var type: MoveType?,
+    var type: MoveType,
     var card1: Card?,
     var card2: Card?,
     var card3: Card?,
     var reason: String
-)
+){
+    fun getMoveType(): String {
+        return type.moveType.toLowerCase()
+    }
+}
 
 enum class Color(val color: String){
     RED("red"),
@@ -107,11 +112,15 @@ enum class Color(val color: String){
     RED_BLUE("red-blue"),
     RED_GREEN("red-green"),
     YELLOW_GREEN("yellow-green"),
-    MULTI("multi");
+    MULTI("multi"),
+    NULL("null");
     companion object {
         fun fromTypeString(colorString: String): Color? {
             return values().find { it.color == colorString }
         }
+    }
+    override fun toString(): String {
+        return color.lowercase()
     }
 }
 enum class Type(val type: String){
@@ -125,10 +134,17 @@ enum class Type(val type: String){
             return values().find { it.type == typeString }
         }
     }
+    override fun toString(): String {
+        return type.lowercase()
+    }
 }
 enum class MoveType(val moveType: String){
     TAKE("take"),
     PUT("put"),
-    NOPE("nope")
+    NOPE("nope");
+
+    override fun toString(): String {
+        return moveType.lowercase()
+    }
 }
 

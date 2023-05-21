@@ -57,8 +57,8 @@ class GUIMain : JFrame("Nope Card Game") {
             button.alignmentX = CENTER_ALIGNMENT
             button.preferredSize = Dimension(400,70)
             button.maximumSize = Dimension(800, 70)
-            button.setForeground(Color.BLACK)                    // Vordergrundfarbe auf "rot" setzen
-            button.background = Color(233,196,183) // Hintergrundfarbe auf "weiß" setzen
+            button.setForeground(Color.BLACK)
+            button.background = Color(233,196,183)
             button.isBorderPainted = false
 
             if(item == "Create Tournament"){
@@ -373,7 +373,7 @@ class GUIMain : JFrame("Nope Card Game") {
                 val tournamentInfoStatus = startTournament()
                 if(tournamentInfoStatus.success){
                     showMessage(this, "The Tournament starts now -> go to game room", 2000)
-                    cardLayout.show(contentPane, "game")
+                    //cardLayout.show(contentPane, "game")
                 }else{
                     showMessage(this,tournamentInfoStatus.error.toString(),2000)
                 }

@@ -61,6 +61,10 @@ class AILogic{
                 }
             }
 
+            // TODO if else je nach topcard.value
+            // TODO sum of cards == topcard.value NOT Value of cards
+            // TODO special cards count alone
+
             // find possibles pairs and store them as an arraylist inside the fittingCards
             // case 1 card -> fitting number // special card
             //var tempCollocation = ArrayList<Card>()

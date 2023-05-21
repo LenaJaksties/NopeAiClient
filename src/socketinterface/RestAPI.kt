@@ -11,9 +11,9 @@ import com.google.gson.Gson
  */
 
 class RestApi(){
-    fun registerUser() {
+    fun registerUser(uName: String) {
 
-        val registerOb = Register("summer","busan1sBe3utiful","Lena","Jaksties")
+        val registerOb = Register(uName,"busan1sBe3utiful","Lena","Jaksties")
 
         println("hi")
         val client = HttpClient.newHttpClient()

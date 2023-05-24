@@ -9,6 +9,7 @@ import kotlin.random.Random
  */
 
 fun main(args: Array<String>) {
+    // summer/winter/Lena
     val user = "summer"
     //Server URL
     val serverURL = "https://nope-server.azurewebsites.net/"

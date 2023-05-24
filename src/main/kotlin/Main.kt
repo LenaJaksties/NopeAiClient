@@ -9,14 +9,14 @@ import kotlin.random.Random
  */
 
 fun main(args: Array<String>) {
-    val user = "summer"
+    val user = "Lena"
     //Server URL
     val serverURL = "https://nope-server.azurewebsites.net/"
 
     val restapi = RestApi()
 
     //Register
-//    restapi.registerUser()
+    //restapi.registerUser(user)
 
     //Login
     val token = restapi.userLogin(user)

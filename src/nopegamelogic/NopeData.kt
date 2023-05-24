@@ -78,7 +78,7 @@ data class Card(
     var value: Int?,
     var select: Int?,
     var selectValue: Int?,
-    var selectedColor: String?
+    var selectedColor: Color?
 ){
     fun getType(): String {
         return type.type.toLowerCase()

@@ -1,8 +1,12 @@
 //package nopegamelogic
 //
-//import kotlin.test.Test
+////import kotlin.test.Test
+//import kotlin.*
 //import kotlin.test.BeforeTest
 //import kotlin.test.assertEquals
+//
+//import org.junit.jupiter.api.Test
+//
 //
 //class AILogicTest {
 //    val testAILogic = AILogic()
@@ -20,7 +24,8 @@
 //    val cardTop = Card(Type.NUMBER,Color.RED,3,null,null,null)
 //    val cardLastTop = Card(Type.NUMBER,Color.RED_BLUE,2,null,null,null)
 //
-//    var turndata =  TurnInfo(handcards,cardTop,cardLastTop,false)
+//    var turndata =  GameState(null,null,cardTop,cardLastTop,null,null,handcards,null,null,null,null,null,null,null,false,null,null)
+//
 //
 //    @BeforeTest
 //    fun setUp() {
@@ -31,7 +36,7 @@
 //        handcards.add(card5)
 //        handcards.add(card6)
 //
-//        turndata =  TurnInfo(handcards,cardTop,cardLastTop,false)
+//        turndata =  GameState(null,null,cardTop,cardLastTop,null,null,handcards,null,null,null,null,null,null,null,false,null,null)
 //    }
 //
 //    @Test
@@ -39,6 +44,6 @@
 //        val card1 = Card(Type.NUMBER,Color.RED,2,null,null,null)
 //        val card2 = Card(Type.NUMBER,Color.RED,1,null,null,null)
 //        val expected = Move(MoveType.PUT, card1,card2,null,"Because I can")
-//        assertEquals(expected, testAILogic.CalculateTurn(turndata))
+//        assertEquals(expected, testAILogic.calculateTurn(turndata))
 //    }
 //}

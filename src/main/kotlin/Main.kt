@@ -9,7 +9,7 @@ import kotlin.random.Random
  */
 
 fun main(args: Array<String>) {
-    val user = "summer"
+    val user = "winter"
     //Server URL
     val serverURL = "https://nope-server.azurewebsites.net/"
 
@@ -76,9 +76,41 @@ fun main(args: Array<String>) {
 
 
     var turnData =  GameState(null,null,cardTop,cardLastTop,null,null,handCards,null,null,null,null,null,null,null,true,null,null)
-
     var turnMove = testAILogic.calculateTurn(turnData)
+    println(turnMove)
+    println()
 
+
+    val cardS= Card(Type.SELECTION, Color.BLUE,null,null,3,null)
+    val cardS1 = Card(Type.SEE_THROUGH, Color.YELLOW,null,null,null,null)
+    val cardS2 = Card(Type.JOKER, Color.MULTI,1,null,null,null)
+    val cardS3 = Card(Type.REBOOT, Color.MULTI,null,null,null,null)
+
+    // tests for special cards
+
+    println("SELECTION Card")
+    turnData =  GameState(null,null,cardS,cardLastTop,null,null,handCards,null,null,null,null,null,null,null,true,null,null)
+    turnMove = testAILogic.calculateTurn(turnData)
+    println(turnMove)
+    println()
+    println("SEE THROUGH CARD (FIRST CARD)")
+    turnData =  GameState(null,null,cardS1,null,null,null,handCards,null,null,null,null,null,null,null,true,null,null)
+    turnMove = testAILogic.calculateTurn(turnData)
+    println(turnMove)
+    println()
+    println("SEE THROUGH CARD (WITH PRIOR CARD)")
+    turnData =  GameState(null,null,cardS1,cardLastTop,null,null,handCards,null,null,null,null,null,null,null,true,null,null)
+    turnMove = testAILogic.calculateTurn(turnData)
+    println(turnMove)
+    println()
+    println("JOKER CARD")
+    turnData =  GameState(null,null,cardS2,cardLastTop,null,null,handCards,null,null,null,null,null,null,null,true,null,null)
+    turnMove = testAILogic.calculateTurn(turnData)
+    println(turnMove)
+    println()
+    println("REBOOT CARD")
+    turnData =  GameState(null,null,cardS3,cardLastTop,null,null,handCards,null,null,null,null,null,null,null,true,null,null)
+    turnMove = testAILogic.calculateTurn(turnData)
     println(turnMove)
     println()
 

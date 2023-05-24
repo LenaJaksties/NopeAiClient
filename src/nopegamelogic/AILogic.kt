@@ -41,14 +41,12 @@ class AILogic{
         }
         return turnmove
     }
-
     private fun findMatchingCards(handCards: ArrayList<Card>, lastCard: Card, preLastCard: Card?): ArrayList<ArrayList<Card>> {
-        var cardMatches = false
-        var matchingCardCollocations =  ArrayList<ArrayList<Card>>()
 
+        var matchingCardCollocations =  ArrayList<ArrayList<Card>>()
+        var colorMatchingCard = ArrayList<Card>()
         if(lastCard.type == Type.NUMBER){
             // look for colors
-            var colorMatchingCard = ArrayList<Card>()
             val inputColor = lastCard.color
             // check Colors and store all matching colors
             colorMatchingCard = getCardsThatMatchColor(handCards, inputColor, colorMatchingCard)
@@ -63,19 +61,60 @@ class AILogic{
                 // add all combinations of two cards that match the color
                 matchingCardCollocations = addMatching2Cards(colorMatchingCard, lastCard, matchingCardCollocations)
             }else if(lastCard.value == 3){
-                // add all combinations f three cards that match the color
+                // add all combinations of three cards that match the color
                 matchingCardCollocations = addMatching3Cards(colorMatchingCard, lastCard, matchingCardCollocations)
             } else{
                 print("Something went wrong with the value of the top card")
             }
-        }else if (lastCard.type == Type.JOKER){
-            // TODO special card handling
-        }else if(lastCard.type == Type.REBOOT){
-
+        }else if (lastCard.type == Type.JOKER || lastCard.type == Type.REBOOT){
+            // put down a single card of own choice
+            val inputColor = lastCard.color // Multi
+            colorMatchingCard = getCardsThatMatchColor(handCards, inputColor, colorMatchingCard)
+            // add special cards first
+            matchingCardCollocations = addMatching1Cards(true,colorMatchingCard, matchingCardCollocations)
+            // add all number cards
+            matchingCardCollocations = addMatching1Cards(false,colorMatchingCard, matchingCardCollocations)
         }else if(lastCard.type == Type.SEE_THROUGH){
-            // look at card beneath it
+            // look at card beneath it (call function again and swap top card)
+            if (preLastCard != null) {
+                findMatchingCards(handCards, preLastCard,null)
+            }else{
+                // no card prior special rule: put down a single card of the color of the See through card
+                val inputColor = lastCard.color
+                colorMatchingCard = getCardsThatMatchColor(handCards, inputColor, colorMatchingCard)
+                // add special cards first
+                matchingCardCollocations = addMatching1Cards(true,colorMatchingCard, matchingCardCollocations)
+                // add other matching number cards
+                matchingCardCollocations = addMatching1Cards(false,colorMatchingCard, matchingCardCollocations)
+            }
         }else if(lastCard.type == Type.SELECTION){
-
+            // use color of selection card or given special selection color when multi and special value color for amount of cards
+            var inputColor = Color.NULL;
+            if(lastCard.color != Color.MULTI){
+                // look for card color
+                inputColor = lastCard.color
+            }else{
+                // use given color
+                inputColor = lastCard.selectedColor!!
+            }
+            // check Colors and store all matching colors
+            colorMatchingCard = getCardsThatMatchColor(handCards, inputColor, colorMatchingCard)
+            // add special cards that match the color
+            matchingCardCollocations = addMatching1Cards(true,colorMatchingCard, matchingCardCollocations)
+            // if else depending on amounts of cards that should be played out the other player decided
+            if(lastCard.selectValue == 1){
+                // add every single card that matches the color
+                // skip special cards as they are already inside the collection
+                matchingCardCollocations = addMatching1Cards(false,colorMatchingCard, matchingCardCollocations)
+            }else if(lastCard.selectValue == 2){
+                // add all combinations of two cards that match the color
+                matchingCardCollocations = addMatching2Cards(colorMatchingCard, lastCard, matchingCardCollocations)
+            }else if(lastCard.selectValue == 3){
+                // add all combinations of three cards that match the color
+                matchingCardCollocations = addMatching3Cards(colorMatchingCard, lastCard, matchingCardCollocations)
+            } else{
+                print("Something went wrong with the value of the top card - There wasn't a Value given by the the player")
+            }
         }else{
             // error card
             print("Something went wrong with the type of the top card")
@@ -89,13 +128,12 @@ class AILogic{
         return matchingCardCollocations
 
     }
-
     /**
      * filters hand cards and selects only cards that match the color/ colors
      * @param handCards cards of the player
      * @param inputColor color of the top card of the discard pile
      * @param colorMatchingCard list of cards that will store matching cards
-     * @return colorMatchingCard: list of cards who have a fitting color
+     * @return ArrayList<Card> list of cards that have a matching color
      */
     private fun getCardsThatMatchColor(handCards: ArrayList<Card>,inputColor: Color,colorMatchingCard: ArrayList<Card>) : ArrayList<Card> {
         if(inputColor.color == Color.MULTI.color){
@@ -116,12 +154,7 @@ class AILogic{
         }
         return colorMatchingCard
     }
-
-    private fun addMatching1Cards(
-        specialCards:Boolean,
-        colorMatchingCard: ArrayList<Card>,
-        matchingCardCollocations: ArrayList<ArrayList<Card>>
-    ):ArrayList<ArrayList<Card>>  {
+    private fun addMatching1Cards(specialCards:Boolean,colorMatchingCard: ArrayList<Card>,matchingCardCollocations: ArrayList<ArrayList<Card>>):ArrayList<ArrayList<Card>>  {
         for (card in colorMatchingCard) {
 
             if(specialCards){
@@ -142,12 +175,22 @@ class AILogic{
         }
         return matchingCardCollocations
     }
-
-    private fun addMatching3Cards(
-        colorMatchingCard: ArrayList<Card>,
-        lastCard: Card,
-        matchingCardCollocations: ArrayList<ArrayList<Card>>
-    ):ArrayList<ArrayList<Card>> {
+    private fun addMatching2Cards(colorMatchingCard: ArrayList<Card>,lastCard: Card,matchingCardCollocations: ArrayList<ArrayList<Card>>):ArrayList<ArrayList<Card>> {
+        for (i in 0 until colorMatchingCard.size) {
+            val card = colorMatchingCard[i]
+            for (j in i + 1 until colorMatchingCard.size) {
+                val card2 = colorMatchingCard[j]
+                if (checkSameColor(card, card2, lastCard)) {
+                    var tempCollocation = ArrayList<Card>()
+                    tempCollocation.add(card)
+                    tempCollocation.add(card2)
+                    matchingCardCollocations.add(tempCollocation)
+                }
+            }
+        }
+        return matchingCardCollocations
+    }
+    private fun addMatching3Cards(colorMatchingCard: ArrayList<Card>,lastCard: Card,matchingCardCollocations: ArrayList<ArrayList<Card>>):ArrayList<ArrayList<Card>> {
         for (i in 0 until colorMatchingCard.size) {
             val card = colorMatchingCard[i]
             for (j in i + 1 until colorMatchingCard.size) {
@@ -167,27 +210,6 @@ class AILogic{
         }
         return matchingCardCollocations
     }
-
-    private fun addMatching2Cards(
-        colorMatchingCard: ArrayList<Card>,
-        lastCard: Card,
-        matchingCardCollocations: ArrayList<ArrayList<Card>>
-    ):ArrayList<ArrayList<Card>> {
-        for (i in 0 until colorMatchingCard.size) {
-            val card = colorMatchingCard[i]
-            for (j in i + 1 until colorMatchingCard.size) {
-                val card2 = colorMatchingCard[j]
-                if (checkSameColor(card, card2, lastCard)) {
-                    var tempCollocation = ArrayList<Card>()
-                    tempCollocation.add(card)
-                    tempCollocation.add(card2)
-                    matchingCardCollocations.add(tempCollocation)
-                }
-            }
-        }
-        return matchingCardCollocations
-    }
-
     private fun checkSameColor(card:Card, card2:Card, lastCard: Card):Boolean{
         var isSameColor = false
         if(card.color.color == card2.color.color || card.color.color in card2.color.color || card2.color.color in card.color.color || card2.color.color == Color.MULTI.color || card.color.color == Color.MULTI.color|| checkDoubleValuesForeEquality(card,card2).color in lastCard.color.color){
@@ -252,7 +274,11 @@ class AILogic{
         // TODO add smart decision
 
         // Priority:
-        // 1. Joker
+        // 1. Joker, reboot, Select with Color MULTI
+        // 2. Select, See through
+
+        //
+
 
 
         bestMoveCards.addAll(fittingCardInDeck[0])

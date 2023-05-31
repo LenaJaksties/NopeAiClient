@@ -1,12 +1,13 @@
 package guiview
 /*import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken*/
+import nopegamelogic.Player
 import nopegamelogic.Tournament
+import nopegamelogic.Type
 import socketinterface.*
 import java.awt.*
 import javax.swing.*
 import javax.swing.table.DefaultTableModel
-import guiview.showMessage
 
 
 class GUIMain : JFrame("Nope Card Game") {
@@ -14,6 +15,16 @@ class GUIMain : JFrame("Nope Card Game") {
     private val scoreTable = JTable()
     private var tournamentTable = JTable()
     private var currentTournamentTable = JTable()
+    private var currentTournamentWinnerTable = JTable()
+
+    private var tournamentMessageBoard = JTextArea(20,10)
+    private var gameMessageBoard = JTextArea(20,10)
+    private var gameInfoTextArea = JTextArea(6, 10)
+    private var turnInfoTextArea = JTextArea(6, 4)
+    private var hand = JTextArea(7, 10)
+
+    private var topCardButton = JButton()
+    private var lastTopCardButton = JButton()
 
     private var inTournament = false
     private var tournamentCreator = false
@@ -125,7 +136,7 @@ class GUIMain : JFrame("Nope Card Game") {
         scorePanel.add(returnButton, BorderLayout.SOUTH)
 
 
-        initTournamentPanel()
+        initCreateTournamentPanel()
 
         initTournamentListPanel()
 
@@ -149,148 +160,114 @@ class GUIMain : JFrame("Nope Card Game") {
         inGamePanel.background = Color(0,0,0)
 
         // divide main Panel into two by adding a new panel
-        val tempPanel = JPanel()
-        tempPanel.layout = BoxLayout(tempPanel, BoxLayout.Y_AXIS)
-        tempPanel.isVisible = true
-        tempPanel.background = Color(255, 255, 160)
+        val mainBoxPanel = JPanel()
+        mainBoxPanel.layout = BoxLayout(mainBoxPanel, BoxLayout.Y_AXIS)
+        mainBoxPanel.isVisible = true
+        mainBoxPanel.background = Color(255, 255, 160)
+
+        // south of mainBoxPanel
+        hand.font = Font("Arial", Font.PLAIN, 18)
+        updateHandCards()
 
 
+        // Divided north of mainBoxPanel
+        val boxPanelNorth = JPanel()
+        boxPanelNorth.layout = BoxLayout(boxPanelNorth, BoxLayout.X_AXIS)
+        boxPanelNorth.isVisible = true
 
-        val tempPanel3 = JPanel()
-        tempPanel3.layout = BorderLayout()
-        tempPanel3.border = object : javax.swing.border.LineBorder(Color(240,222,132), 2) {
-            override fun paintBorder(c: Component, g: Graphics, x: Int, y: Int, width: Int, height: Int) {
-                super.paintBorder(c, g, x, y, width, height)
-                // additional border painting code here
-            }
-        }
-        tempPanel3.background = Color(255, 255, 255)
-
-        var hand = JTextArea(7, 10)
-        hand.font = Font("Arial", Font.PLAIN, 22)
-        hand.append("Your handcards:\n")
-        hand.append("Green 2 \n")
-        hand.append("Green Yellow 3 \n")
-        hand.append("Green Yellow 3 \n")
-        hand.append("Red Yellow 2 \n")
-        hand.append("Green Yellow 3 \n")
-        hand.append("Green Yellow 3 \n")
-        hand.append("Green Yellow 3 \n")
-        hand.append("Green Yellow 3 \n")
-        hand.append("LuckyCard From Jinx: multi \n")
-        hand.append("Card of Destruction: 9000 \n")
+        // Right side of north including Game Info Field and Game Message Board
+        val borderPanel4GameBoardAndGameInfo = JPanel()
+        borderPanel4GameBoardAndGameInfo.layout = BorderLayout()
+        borderPanel4GameBoardAndGameInfo.background = Color(159, 200, 255)
 
 
-        var currTime = 222
-        var time = "Rest Time    -    " + currTime + "        "
-        val timeCount = JLabel(time )
-        timeCount.font = Font("Arial", Font.BOLD, 24)
-        tempPanel3.add(timeCount, BorderLayout.EAST)
-        tempPanel3.add(hand, BorderLayout.WEST)
+        val boxPanel4GameBoardAndGameInfo = JPanel()
+        boxPanel4GameBoardAndGameInfo.layout = BoxLayout(boxPanel4GameBoardAndGameInfo, BoxLayout.Y_AXIS)
+        boxPanel4GameBoardAndGameInfo.isVisible = true
 
+        // init gameInfo field
+        gameInfoTextArea.font = Font("Arial", Font.PLAIN, 22)
+        updateGameInfoTextArea()
 
+        // init game message board
+        gameMessageBoard.font = Font("Arial",Font.PLAIN,16)
+        val scrollPane = JScrollPane(gameMessageBoard)
+        scrollPane.background = Color(255, 255, 255)
+        scrollPane.verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_ALWAYS
 
+        boxPanel4GameBoardAndGameInfo.add(gameInfoTextArea)
+        boxPanel4GameBoardAndGameInfo.add(scrollPane)
 
+        val gameInfo = JLabel()
+        gameInfo.font= Font("Arial", Font.PLAIN, 22)
+        gameInfo.text = "INFO BOARD"
+        borderPanel4GameBoardAndGameInfo.add(boxPanel4GameBoardAndGameInfo,BorderLayout.CENTER)
+        borderPanel4GameBoardAndGameInfo.add(gameInfo,BorderLayout.NORTH)
 
-        val tempPanelDiv = JPanel(GridBagLayout())
-        tempPanelDiv.isVisible = true
-        tempPanelDiv.background = Color(0, 0, 0)
-
-        val tempPanel4 = JPanel()
-        tempPanel4.layout = BorderLayout()
-        tempPanel4.background = Color(23, 100, 255)
-
-        val taName = JTextArea(7, 10)
-        taName.font = Font("Arial", Font.PLAIN, 22)
-        val tid = 22
-        taName.append("\n\n\n\n\n")
-        taName.append("Tournament id :   $tid\n")
-        taName.append("Match id :   $tid\n")
-        taName.append("Round x out of y :   $tid\n")
-        taName.append("Playerlist :  \n")
-        taName.append("summer :  points $tid\n")
-        taName.append("evilBot3000 : points  $tid\n")
-        taName.append("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-        taName.append("current Player : Muchacho \n")
-        taName.append("summer : cardsize  $tid\n")
-        taName.append("evilBot3000 : cardsize  $tid\n")
-        taName.append("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-        taName.append("~ Shin chan hat eine Kate gezogen   ~\n")
-        taName.append("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-        tempPanel4.add(taName,BorderLayout.CENTER)
-
-
-
+        // Left side of North
 
         val tempPanel2 = JPanel()
         tempPanel2.layout = GridBagLayout()
-        tempPanel2.background = Color(233,196,183)
-
-        val gbc1 = GridBagConstraints()
-        gbc1.fill = GridBagConstraints.BOTH
-        gbc1.ipady= 20
-        gbc1.ipadx = 20
-
-
-        val cardPile = JLabel("FANCY DANCY TOP CARDS : ")
-        cardPile.font = Font("Arial", Font.ITALIC, 33)
-        gbc1.gridx = 0
-        gbc1.gridy = 0
-        tempPanel2.add(cardPile,gbc1)
-
-
-
-        gbc1.weightx = 0.5
-        gbc1.gridx = 0
-        gbc1.gridy = 1
-
-        val but = JButton("Top Card:")
-        but.preferredSize = Dimension(20, 240)
-        but.background = Color(255,255,255)
-        tempPanel2.add(but, gbc1)
-
-        gbc1.gridx = 1
-
-        val but2 = JButton("Top Card2:")
-        but2.preferredSize = Dimension(20, 240)
-        but2.background = Color(255,255,255)
-        tempPanel2.add(but2, gbc1)
-
-        var pileSize = 22
-        var drawPileSize = "DRAW PILE SIZE :  " + pileSize
-        val drawPile = JLabel(drawPileSize)
-        drawPile.font = Font("Arial", Font.ITALIC, 33)
-        gbc1.gridx = 0
-        gbc1.gridy = 2
-        tempPanel2.add(drawPile,gbc1)
-
-        gbc1.gridx = 1
-        gbc1.gridy = 2
-        tempPanel2.add(tempPanel3,gbc1)
-
-
-
-
-
+        tempPanel2.background =  Color(159, 200, 255)
 
         val gbc = GridBagConstraints()
         gbc.fill = GridBagConstraints.BOTH
+
+//        gbc.weighty = 0.2
+        val cardPile = JLabel("Discard Pile Cards")
+
+
+        cardPile.font = Font("Arial", Font.BOLD, 33)
         gbc.gridx = 0
         gbc.gridy = 0
-        gbc.weightx = 0.4
-        gbc.weighty = 0.4
+        tempPanel2.add(cardPile,gbc)
+        val text1 = JTextArea("current top card:")
+        gbc.gridx = 0
+        gbc.gridy = 1
+        tempPanel2.add(text1,gbc)
+        val text2 = JTextArea("last top card:")
+        gbc.gridx = 1
+        gbc.gridy = 1
+        tempPanel2.add(text2,gbc)
 
-        tempPanelDiv.add(tempPanel2, gbc)
+        gbc.gridx = 0
+        gbc.gridy = 2
+
+
+        //topCardButton.preferredSize = Dimension(20, 240)
+        topCardButton.icon = ImageIcon("bin/cover.png")
+        topCardButton.background = Color(255,255,255)
+//        lastTopCardButton.preferredSize = Dimension(20, 240)
+        lastTopCardButton.background = Color(255,255,255)
+        lastTopCardButton.icon = ImageIcon("bin/cover.png")
+        updateTopCards()
+
+        tempPanel2.add(topCardButton, gbc)
 
         gbc.gridx = 1
-        gbc.gridy = 0
-        gbc.weightx = 0.5
-        gbc.weighty = 0.5
-        tempPanelDiv.add(tempPanel4, gbc)
+        gbc.gridy = 2
+//        gbc.weightx = 0.6
 
 
-        tempPanel.add(tempPanelDiv,gbc1)
-        tempPanel.add(tempPanel3)
+        tempPanel2.add(lastTopCardButton, gbc)
+
+        gbc.gridx = 0
+        gbc.gridy = 3
+        gbc.gridwidth = 2
+        gbc.gridheight = 2
+        turnInfoTextArea.font = Font("Arial",Font.PLAIN,16)
+
+        tempPanel2.add(turnInfoTextArea,gbc)
+
+
+
+
+        boxPanelNorth.add(tempPanel2)
+        boxPanelNorth.add(borderPanel4GameBoardAndGameInfo)
+
+
+        mainBoxPanel.add(boxPanelNorth,gbc)
+        mainBoxPanel.add(hand)
 
 
 
@@ -302,22 +279,22 @@ class GUIMain : JFrame("Nope Card Game") {
         returnButton4.border = BorderFactory.createEmptyBorder(0, 10, 0, 10)
         returnButton4.addActionListener {
 
-            cardLayout.show(contentPane, "tournamentLobby")
+            cardLayout.show(contentPane, "game lobby")
         }
 
 
 
-        val buttt = JButton("I am here for some space")
-        buttt.font = Font("Arial", Font.BOLD, 14)
-        buttt.preferredSize = Dimension(150, 40)
-        buttt.background = Color(255,255,255)
-        buttt.border = BorderFactory.createEmptyBorder(0, 10, 0, 10)
-        buttt.addActionListener {
+        val invisibleButton = JButton(" ")
+        invisibleButton.font = Font("Arial", Font.BOLD, 14)
+        invisibleButton.preferredSize = Dimension(150, 40)
+        invisibleButton.background = Color(255,255,255)
+        invisibleButton.border = BorderFactory.createEmptyBorder(0, 10, 0, 10)
+        invisibleButton.addActionListener {
 
             cardLayout.show(contentPane, "tournamentLobby")
         }
-        inGamePanel.add(buttt,BorderLayout.NORTH)
-        inGamePanel.add(tempPanel, BorderLayout.CENTER)
+        inGamePanel.add(invisibleButton,BorderLayout.NORTH)
+        inGamePanel.add(mainBoxPanel, BorderLayout.CENTER)
         inGamePanel.add(returnButton4, BorderLayout.SOUTH)
     }
 
@@ -374,7 +351,7 @@ class GUIMain : JFrame("Nope Card Game") {
                 val tournamentInfoStatus = startTournament()
                 if(tournamentInfoStatus.success){
                     showMessage(this, "The Tournament starts now -> go to game room", 2000)
-                    //cardLayout.show(contentPane, "game")
+                    cardLayout.show(contentPane, "game")
                 }else{
                     showMessage(this,tournamentInfoStatus.error.toString(),2000)
                 }
@@ -388,6 +365,8 @@ class GUIMain : JFrame("Nope Card Game") {
 
 
 
+        val boxPanelCurrentTournament = JPanel()
+        boxPanelCurrentTournament.layout = BoxLayout(boxPanelCurrentTournament, BoxLayout.Y_AXIS)
 
 
         currentTournamentTable.model =
@@ -399,12 +378,44 @@ class GUIMain : JFrame("Nope Card Game") {
         currentTournamentTable.font = Font("Arial", Font.ITALIC, 16)
         currentTournamentTable.gridColor = Color(233,196,183)
 
-
-
         val scrollPane = JScrollPane(currentTournamentTable)
         scrollPane.background = Color(255, 255, 255)
         scrollPane.verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_ALWAYS
-        tournamentLobbyPanel.add(scrollPane, BorderLayout.CENTER)
+
+        boxPanelCurrentTournament.add(scrollPane)
+
+
+        val boxPanelCurTouMessageAndBoard = JPanel()
+        boxPanelCurTouMessageAndBoard.layout = BoxLayout(boxPanelCurTouMessageAndBoard, BoxLayout.X_AXIS)
+
+        tournamentMessageBoard.font = Font("Arial", Font.PLAIN, 22)
+        tournamentMessageBoard.append("Tournament Message Board \n")
+
+        val scrollPaneMessageBoard = JScrollPane(tournamentMessageBoard)
+        scrollPaneMessageBoard.background = Color(255, 255, 255)
+        scrollPaneMessageBoard.verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_ALWAYS
+
+        boxPanelCurTouMessageAndBoard.add(scrollPaneMessageBoard)
+
+        currentTournamentWinnerTable.model = DefaultTableModel(arrayOf("Player", "Points"), 0)
+        currentTournamentWinnerTable.fillsViewportHeight = true
+        currentTournamentWinnerTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
+        currentTournamentWinnerTable.rowSelectionAllowed = true
+        currentTournamentWinnerTable.columnSelectionAllowed = false
+        currentTournamentWinnerTable.font = Font("Arial", Font.ITALIC, 18)
+        currentTournamentWinnerTable.gridColor = Color(255,255,255)
+        currentTournamentWinnerTable.background = Color(233,196,183)
+
+        val scrollPaneWinner = JScrollPane(currentTournamentWinnerTable)
+        scrollPaneWinner.maximumSize = Dimension(400,600)
+        scrollPaneWinner.background =  Color(233,196,183)
+        scrollPaneWinner.verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_ALWAYS
+
+        boxPanelCurTouMessageAndBoard.add(scrollPaneWinner)
+        boxPanelCurrentTournament.add(boxPanelCurTouMessageAndBoard)
+
+
+        tournamentLobbyPanel.add(boxPanelCurrentTournament, BorderLayout.CENTER)
 
 
 
@@ -485,7 +496,7 @@ class GUIMain : JFrame("Nope Card Game") {
 
 
     }
-    private fun initTournamentPanel() {
+    private fun initCreateTournamentPanel() {
         crTournamentPanel.layout = BorderLayout()
         crTournamentPanel.background = Color(255, 255, 255)
 
@@ -626,6 +637,22 @@ class GUIMain : JFrame("Nope Card Game") {
             tournamentTable.isEnabled = true
         }
     }
+    fun updateCurrentTournamentScoreList(){
+        currentTournamentWinnerTable.model = DefaultTableModel(arrayOf("Player","Score"),0)
+        val model = currentTournamentWinnerTable.model as DefaultTableModel
+        val playerScore = ArrayList<Player>()
+        if (currentTournament.id != null){
+            for(i in 0 until (currentTournament.players?.size ?: 0)){
+                currentTournament.players?.let { playerScore.add(it[i]) }
+
+            }
+            playerScore.sortByDescending { it.score ; }
+        }
+        for(i in 0 until playerScore.size){
+            model.addRow(arrayOf(playerScore[i].username,playerScore[i].score))
+
+        }
+    }
     private fun updateCurrentTournament(){
         if (currentTournament.id != null){
             if(currentTournament.message!=null){
@@ -638,35 +665,160 @@ class GUIMain : JFrame("Nope Card Game") {
                     players  += " ${currP.username} "
                 }
             }
-            if(currentTournament.winner != null){
-                //TODO make prettier
-            }
-            if(currentTournament.host != null){
-                //TODO make prettier
-            }
+
+
+            val host = currentTournament.host?.username ?:""
+
             val model = currentTournamentTable.model as DefaultTableModel
-            model.addRow(arrayOf( currentTournament.id, currentTournament.currentSize, currentTournament.createdAt, currentTournament.status, players, currentTournament.bestOf, currentTournament.message,currentTournament.host,currentTournament.winner))
-            println("CURRENT T $currentTournament")
+            model.addRow(arrayOf( currentTournament.id, currentTournament.currentSize, currentTournament.createdAt, currentTournament.status, players, currentTournament.bestOf,host))
+            tournamentMessageBoard.append( "${currentTournament.message?:""}\n")
+            //tournamentMessageBoard.append("Winner of the Tournament: ${currentTournament.winner.toString()}\n")
+            println("Tournament Info $currentTournament")
         }
     }
     fun updateCurrentTournamentList(){
 
-        currentTournamentTable.model= DefaultTableModel(arrayOf("ID", "Current Size", "Date", "status", "Players", "Best Of", "Last Message","Host", "Winner"), 0 )
+        currentTournamentTable.model= DefaultTableModel(arrayOf("ID", "Current Size", "Date", "status", "Players", "Best Of", "Host"), 0 )
         updateCurrentTournament()
 
 
     }
 
+    fun updateCurrentGameStatus(){
+        // update player score of winner
+//        for (i in 0 until (currentGame.players?.size ?: 0)){
+//            if(currentGame.winner?.id == currentGame.players?.get(i)?.id){
+//                currentGame.players?.get(i)?.score = currentGame.winner?.score
+//            }
+//        }
+        // print playerlist and scores again
+        updateGameInfoTextArea()
+        // update MessageBoards
+        gameMessageBoard.append("${currentGame.message}\n")
+        tournamentMessageBoard.append("${currentGame.message?:""}\n")
+
+
+    }
+    fun updateCurrentMatchInfo(){
+
+        updateGameInfoTextArea()
+
+        gameMessageBoard.append("${currentMatch.message}\n")
+        tournamentMessageBoard.append("${currentMatch.message?:""}\n")
+    }
+    private fun updateGameInfoTextArea(){
+        gameInfoTextArea.text = ""
+        gameInfoTextArea.append("Tournament id :   ${currentMatch.tournamentId?:""}\n")
+        gameInfoTextArea.append("Match id :   ${currentGame.matchId?:""}\n")
+        gameInfoTextArea.append("Game id :   ${currentGame.gameId?:""}\n")
+        gameInfoTextArea.append("Round: ${currentMatch.round?:""}    (Best of ${currentMatch.bestOf?:""})\n")
+        gameInfoTextArea.append("Players :  \n")
+//        gameInfoTextArea.append("        ${currentGame.players?.get(0)?.username?:""} : points ${currentGame.players?.get(0)?.score?:""} \n")
+//        gameInfoTextArea.append("        ${currentGame.players?.get(1)?.username?:""} : points ${currentGame.players?.get(1)?.score?:""} \n")
+        gameInfoTextArea.append("        ${currentMatch.opponents?.get(0)?.username?:""} : points ${currentMatch.opponents?.get(0)?.score?:""} \n")
+        gameInfoTextArea.append("        ${currentMatch.opponents?.get(1)?.username?:""} : points ${currentMatch.opponents?.get(1)?.score?:""} \n")
+    }
+
+    fun updateGameState(){
+        updateHandCards()
+        updateTurnInfo()
+        updateTopCards()
+    }
+    fun updateCurrentMove(){
+        gameMessageBoard.append("${currentGameMoveNotice.message} \n")
+        gameMessageBoard.append("\n")
+        gameMessageBoard.append("This is your Bots move: \n")
+        gameMessageBoard.append("Type: ${currentMove.type}\n")
+        gameMessageBoard.append("Card1: ${currentMove.card1?.type?:""} ${currentMove.card1?.color?:""} ${currentMove.card1?.value?:""} ${currentMove.card1?.selectValue?:""} ${currentMove.card1?.selectedColor?:""}\n")
+        gameMessageBoard.append("Card2: ${currentMove.card2?.type?:""} ${currentMove.card2?.color?:""} ${currentMove.card2?.value?:""} ${currentMove.card2?.selectValue?:""} ${currentMove.card2?.selectedColor?:""}\n")
+        gameMessageBoard.append("Card3: ${currentMove.card3?.type?:""} ${currentMove.card3?.color?:""} ${currentMove.card3?.value?:""} ${currentMove.card3?.selectValue?:""} ${currentMove.card3?.selectedColor?:""}\n")
+        gameMessageBoard.append("Reason: ${currentMove.reason}\n")
+        gameMessageBoard.append("\n")
+
+    }
+    private fun updateHandCards(){
+        hand.text = ""
+        hand.append("Your hand cards:\n")
+
+        for(i in 0 until (currentGame.hand?.size ?: 0)){
+            hand.append("Card ${i+1}: ${currentGame.hand?.get(i)?.getType()?:""}  ${currentGame.hand?.get(i)?.getColor()?:""}  ${currentGame.hand?.get(i)?.value?:""}  ${currentGame.hand?.get(i)?.selectValue?:""}  ${currentGame.hand?.get(i)?.selectedColor?:""}\n")
+        }
+    }
+    private fun updateTurnInfo(){
+        turnInfoTextArea.text = ""
+        turnInfoTextArea.append("Current Player: ")
+        turnInfoTextArea.append("${currentGame.currentPlayer?.username ?:""}\n")
+
+        turnInfoTextArea.append("${currentGame.players?.get(0)?.username?:""} Size of hand:${currentGame.players?.get(0)?.handSize?:""}\n")
+        turnInfoTextArea.append("${currentGame.players?.get(1)?.username?:""} Size of hand:${currentGame.players?.get(1)?.handSize?:""}\n")
+        turnInfoTextArea.append("Size of deck of cards:${currentGame.drawPileSize?:""}\n")
+
+    }
+    private fun updateTopCards(){
+        // update current top card
+        topCardButton.text = ("${currentGame.topCard?.type?:""} ${currentGame.topCard?.color ?:""} ${currentGame.topCard?.value?:""} ${currentGame.topCard?.selectValue?:""} ${currentGame.topCard?.selectedColor?:""}")
+
+        // change background depending on color
+        if(currentGame.topCard?.color == nopegamelogic.Color.RED){
+            topCardButton.icon = ImageIcon("bin/red.png")
+        }else if(currentGame.topCard?.color == nopegamelogic.Color.GREEN){
+            topCardButton.icon = ImageIcon("bin/green.png")
+        }else if(currentGame.topCard?.color == nopegamelogic.Color.YELLOW){
+            topCardButton.icon = ImageIcon("bin/yellow.png")
+        }else if(currentGame.topCard?.color == nopegamelogic.Color.BLUE){
+            topCardButton.icon = ImageIcon("bin/blue.png")
+        }else if(currentGame.topCard?.color == nopegamelogic.Color.RED_GREEN){
+            topCardButton.icon = ImageIcon("bin/redgreen.png")
+        }else if(currentGame.topCard?.color == nopegamelogic.Color.RED_BLUE){
+            topCardButton.icon = ImageIcon("bin/redblue.png")
+        }else if(currentGame.topCard?.color == nopegamelogic.Color.RED_YELLOW){
+            topCardButton.icon = ImageIcon("bin/redyellow.png")
+        }else if(currentGame.topCard?.color == nopegamelogic.Color.BLUE_GREEN){
+            topCardButton.icon = ImageIcon("bin/bluegreen.png")
+        }else if(currentGame.topCard?.color == nopegamelogic.Color.YELLOW_BLUE){
+            topCardButton.icon = ImageIcon("bin/yellowblue.png")
+        }else if(currentGame.topCard?.color == nopegamelogic.Color.YELLOW_GREEN){
+            topCardButton.icon = ImageIcon("bin/yellowgreen.png")
+        }else if(currentGame.topCard?.color == nopegamelogic.Color.MULTI){
+            topCardButton.icon = ImageIcon("bin/multi.png")
+        }else{
+            topCardButton.icon = ImageIcon("bin/cover.png")
+        }
+
+        // update last top card
+        if((currentGame.lastTopCard?.value != null) or (currentGame.lastTopCard?.type!=nopegamelogic.Type.NUMBER)){
+            lastTopCardButton.text = ("${currentGame.topCard?.type?:""} ${currentGame.lastTopCard?.color ?:""} ${currentGame.lastTopCard?.value?:""} ${currentGame.lastTopCard?.selectValue?:""} ${currentGame.lastTopCard?.selectedColor?:""}")
+            // change background depending on color
+            if(currentGame.lastTopCard?.color == nopegamelogic.Color.RED){
+                lastTopCardButton.icon = ImageIcon("bin/red.png")
+            }else if(currentGame.lastTopCard?.color == nopegamelogic.Color.GREEN){
+                lastTopCardButton.icon = ImageIcon("bin/green.png")
+            }else if(currentGame.lastTopCard?.color == nopegamelogic.Color.YELLOW){
+                lastTopCardButton.icon = ImageIcon("bin/yellow.png")
+            }else if(currentGame.lastTopCard?.color == nopegamelogic.Color.BLUE){
+                lastTopCardButton.icon = ImageIcon("bin/blue.png")
+            }else if(currentGame.lastTopCard?.color == nopegamelogic.Color.RED_GREEN){
+                lastTopCardButton.icon = ImageIcon("bin/redgreen.png")
+            }else if(currentGame.lastTopCard?.color == nopegamelogic.Color.RED_BLUE){
+                lastTopCardButton.icon = ImageIcon("bin/redblue.png")
+            }else if(currentGame.lastTopCard?.color == nopegamelogic.Color.RED_YELLOW){
+                lastTopCardButton.icon = ImageIcon("bin/redyellow.png")
+            }else if(currentGame.lastTopCard?.color == nopegamelogic.Color.BLUE_GREEN){
+                lastTopCardButton.icon = ImageIcon("bin/bluegreen.png")
+            }else if(currentGame.lastTopCard?.color == nopegamelogic.Color.YELLOW_BLUE){
+                lastTopCardButton.icon = ImageIcon("bin/yellowblue.png")
+            }else if(currentGame.lastTopCard?.color == nopegamelogic.Color.YELLOW_GREEN){
+                lastTopCardButton.icon = ImageIcon("bin/yellowgreen.png")
+            }else if(currentGame.lastTopCard?.color == nopegamelogic.Color.MULTI){
+                lastTopCardButton.icon = ImageIcon("bin/multi.png")
+            }else{
+                lastTopCardButton.icon = ImageIcon("bin/cover.png")
+            }
+        }
+    }
+
 }
 
-
-
-
-data class Score(val name: String, val score: Int)
-
-/*
-data class tournamentCreate(val numBestOfMatches: Int)
-*/
 
 
 fun showMessage(fr: JFrame, content: String, time: Int) {

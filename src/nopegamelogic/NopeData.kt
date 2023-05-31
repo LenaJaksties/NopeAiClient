@@ -23,9 +23,11 @@ data class Tournament(
 data class Player(
     var id: String?,
     var username: String?,
-    var score: Int?
+    var score: Int?,
+    var handSize: Int?
 
 )
+
 data class MatchInvitation(
     var invitationTimeout: Long,
     var players: ArrayList<Player>,

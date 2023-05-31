@@ -29,6 +29,10 @@ var currentMatch = Match(null,null,null,null,null,null,null,null)
 
 var currentGame = GameState(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
 
+var currentGameMoveNotice = GameMoveNotice(null,null)
+
+var currentMove = Move(MoveType.NOPE,null,null,null,"")
+
 var aiPlayer = AILogic()
 
 var playerName = ""
@@ -83,18 +87,6 @@ fun connect() {
 fun disconnect() {
     mSocket!!.disconnect()
 }
-//
-//fun emit(event: String, data: JsonObject): Emitter?{
-//    return mSocket ?.emit(event, data)
-//}
-//fun emit(event: String, data: JsonArray): Emitter?{
-//    return mSocket ?.emit(event, data)
-//}
-//fun emit(event: String, data: String): Emitter?{
-//    return mSocket ?.emit(event, data)
-//}
-
-
 fun createTournament(number: Int): TournamentInfo {
 
     val tournamentInfo = TournamentInfo(null,null,null,false,null)
@@ -172,7 +164,7 @@ fun getCurrentTournaments() {
                 val players = ArrayList<Player>()
                 val getPlayerData = tournamentData.getJSONObject("players").getJSONArray("myArrayList")
                 for (j in 0 until getPlayerData.length()) {
-                    val newP = Player(null, getPlayerData.getJSONObject(j).getJSONObject("map").getString("username"),null)
+                    val newP = Player(null, getPlayerData.getJSONObject(j).getJSONObject("map").getString("username"),null,null)
                     players.add(newP)
                 }
                 val newTournament = Tournament(id, createdAt, currentSize, players, status,null, null,null,null)
@@ -210,7 +202,7 @@ fun getPlayerInfo() {
             val players = ArrayList<Player>()
             for (i in 0 until playersArray.length()) {
                 val playerData = playersArray.getJSONObject(i).getJSONObject("map")
-                val newPlayer = Player(playerData.getString("id"), playerData.getString("username"),null)
+                val newPlayer = Player(playerData.getString("id"), playerData.getString("username"),null,null)
                 players.add(newPlayer)
             }
             currentTournament.id = tournamentId
@@ -254,13 +246,13 @@ fun getTournamentInfo() {
                 val playerId = playerObj.getString("id")
                 val playerUsername = playerObj.getString("username")
                 val playerScore = playerObj.getInt("score")
-                val player = Player(playerId, playerUsername, playerScore)
+                val player = Player(playerId, playerUsername, playerScore,null)
                 players.add(player)
             }
-            val host = Player(hostId, hostUsername, null)
+            val host = Player(hostId, hostUsername, null,null)
             // TODO Winner only sometimes
             //val winner = Player(winnerId, winnerUsername, null)
-            val winner = Player(null, null, null)
+            val winner = Player(null, null, null,null)
             val tournament = Tournament(tournamentId, currentTournament.createdAt, currentSize, players, status, currentTournament.bestOf, message, host, winner)
             currentTournament = tournament
             println("Received Tournament Info Data: ID: ${currentTournament.id} Message: ${currentTournament.message} Players: ${currentTournament.players} Best of: ${currentTournament.bestOf} Current Size: ${currentTournament.currentSize} Current Host: ${currentTournament.host} Current Winner: ${currentTournament.winner}")
@@ -268,6 +260,7 @@ fun getTournamentInfo() {
             SwingUtilities.invokeLater {
                 // update GUI components here
                 guiObject?.updateCurrentTournamentList()
+                guiObject?.updateCurrentTournamentScoreList()
             }
         } else {
             println("No Tournament Data received")
@@ -424,7 +417,7 @@ fun receiveMatchInvitation() {
                 val playerObject = playersArray.getJSONObject(i).getJSONObject("map")
                 val playerId = playerObject.getString("id")
                 val playerUsername = playerObject.getString("username")
-                val player = Player(playerId, playerUsername,null)
+                val player = Player(playerId, playerUsername,null,null)
                 players.add(player)
                 if (playerUsername == playerName) {
                     myId = playerId
@@ -471,29 +464,30 @@ fun getMatchInfo() {
             val bestOf = matchObj.getInt("bestOf")
             val status = matchObj.getString("status")
             val opponentsArray = matchObj.getJSONObject("opponents").getJSONArray("myArrayList")
-            val opponents = ArrayList<Player>()
-            // TODO Opponents are only maybe included
-            for (i in 0 until opponentsArray.length()) {
-                val opponentObj = opponentsArray.getJSONObject(i).getJSONObject("map")
-                val id = opponentObj.getString("id")
-                val username = opponentObj.getString("username")
-                val points = opponentObj.getInt("points")
-                val opponent = Player(id, username, points)
-                opponents.add(opponent)
+
+            val opponentList = opponentsArray?.let {
+                val opponents = ArrayList<Player>()
+                for (i in 0 until it.length()) {
+                    val opponentObj = it.getJSONObject(i).getJSONObject("map")
+                    val id = opponentObj.getString("id")
+                    val username = opponentObj.getString("username")
+                    val points = opponentObj.getInt("points")
+                    val opponent = Player(id, username, points,null)
+                    opponents.add(opponent)
+                }
+                opponents
             }
-            //TODO winner can be doesn't have to be
-//            val winnerObj = matchObj.getJSONObject("winner")
-//            val winnerId = winnerObj.getString("id")
-//            val winnerUsername = winnerObj.getString("username")
-//            val winnerPoints = winnerObj.getInt("points")
-//            val winner = Player(winnerId, winnerUsername, winnerPoints)
-            val match = Match(message, tournamentId, id, round, bestOf, status, opponents, null)
+            val winnerObject = matchObj.optJSONObject("winner")?.optJSONObject("map")
+            val winner = winnerObject?.let {
+                Player(it.getString("id"), it.getString("username"),it.getInt("points"),null)
+            }
+            val match = Match(message, tournamentId, id, round, bestOf, status, opponentList, winner)
             currentMatch = match
             println("Received Match Info: ID: ${currentMatch.id} Message: ${currentMatch.message} Opponents: ${currentMatch.opponents} Best of: ${currentMatch.bestOf} Round: ${currentMatch.round} Status: ${currentMatch.status} Winner: ${currentMatch.winner}")
-//            SwingUtilities.invokeLater {
-//                // update GUI components here
-//                guiObject?.updateCurrentMatchInfo()
-//            }
+            SwingUtilities.invokeLater {
+                // update GUI components here
+                guiObject?.updateCurrentMatchInfo()
+            }
         } else {
             println("No Match Data received")
         }
@@ -507,6 +501,12 @@ fun receiveNoticeForMakeAMove() {
         if (args[0] != null) {
             val result = gson.toJson(args)
             println(result.toString())
+            val jsonArray = JSONArray(result)
+            val jsonObject = jsonArray.getJSONObject(0).getJSONObject("map")
+            val message = jsonObject.getString("message")
+            val time = jsonObject.getInt("timeout")
+            var gameMoveNotive = GameMoveNotice(message,time)
+            currentGameMoveNotice = gameMoveNotive
 
             // send back Move
             // Create a separate Gson instance for Card serialization
@@ -521,7 +521,6 @@ fun receiveNoticeForMakeAMove() {
                     }
 
                     override fun read(input: JsonReader): Card? {
-                        // Implement this method if needed for deserialization
                         return null
                     }
                 })
@@ -541,23 +540,35 @@ fun receiveNoticeForMakeAMove() {
                     }
 
                     override fun read(input: JsonReader): Move? {
-                        // Implement this method if needed for deserialization
                         return null
                     }
                 })
                 .create()
 
             val replyMove = aiPlayer.calculateTurn(currentGame)
+            currentMove = replyMove
+            Thread.sleep(4500)
+
+
+            SwingUtilities.invokeLater {
+                // show Move of Ai player in Gui
+                guiObject?.updateCurrentMove()
+            }
+
+
+            // wait a bit before the reply is being sent
+            Thread.sleep(4500)
             val replyMoveJSONString = gsonSpecial.toJson(replyMove)
-            //val replyMoveJSONObject = JSONObject(replyMoveJSONString)
 
             println("THIS is my move as a JSON String: ${replyMoveJSONString.toString()}")
             println()
-            //println("THIS is my move as a JSON Object: ${replyMoveJSONObject.toString()}")
 
             if (args.size > 1 && args[1] is Ack) {
                 (args[1] as Ack).call(replyMoveJSONString)
+            }else{
+                println("There was an error with the acknowledgment fort Make a Move")
             }
+
 
         } else {
             println("No Notice For Make A Move received")
@@ -600,13 +611,13 @@ fun getGameState() {
             val currentPlayerObject = gameStateObject.getJSONObject("currentPlayer").getJSONObject("map")
             val currentPlayer = Player(
                 currentPlayerObject.getString("id"),
-                currentPlayerObject.getString("username"), null
+                currentPlayerObject.getString("username"), null,null
             )
             val currentPlayerIdx = gameStateObject.getInt("currentPlayerIdx")
 
             val prevPlayerObject = gameStateObject.optJSONObject("prevPlayer")?.optJSONObject("map")
             val prevPlayer = prevPlayerObject?.let {
-                Player(it.getString("id"), it.getString("username"),null)
+                Player(it.getString("id"), it.getString("username"),null,null)
             }
             val prevPlayerIdx = gameStateObject.opt("prevPlayerIdx") as? Int
 
@@ -635,7 +646,7 @@ fun getGameState() {
                 val playerId = playerObject.getString("id")
                 val playerUsername = playerObject.getString("username")
                 val playerHandSize = playerObject.getInt("handSize")
-                players.add(Player(playerId, playerUsername, playerHandSize))
+                players.add(Player(playerId, playerUsername,null, playerHandSize))
             }
 
             val handArray = gameStateObject.getJSONObject("hand").getJSONArray("myArrayList")
@@ -663,10 +674,10 @@ fun getGameState() {
             )
             println("This is my current game: $currentGame")
             println("Received Game State: ${result.toString()} \n")
-//            SwingUtilities.invokeLater {
-//                // update GUI components here
-//                guiObject?.updateCurrentTournamentList()
-//            }
+            SwingUtilities.invokeLater {
+                // update GUI components here
+                guiObject?.updateGameState()
+            }
         } else {
             println("No Game State received")
         }
@@ -677,12 +688,27 @@ fun getGameStatus() {
     mSocket?.on("game:status", Emitter.Listener { args ->
         if (args[0] != null) {
             val result = gson.toJson(args)
-            // TODO store data in currentGame
+
+            val jsonArray = JSONArray(result)
+            // get data about Game Status
+            val gameStatus = jsonArray.getJSONObject(0).getJSONObject("map")
+            val message = gameStatus.getString("message")
+            val currentPlayerObject = gameStatus.getJSONObject("winner").getJSONObject("map")
+            val winner = Player(
+                currentPlayerObject.getString("id"),
+                currentPlayerObject.getString("username"),
+                currentPlayerObject.getInt("points"),
+                null
+            )
+            // store values in current game
+            currentGame.winner = winner
+            currentGame.message = message
+
             println("Received Game Status: ${result.toString()} \n")
-//            SwingUtilities.invokeLater {
-//                // update GUI components here
-//                guiObject?.updateCurrentTournamentList()
-//            }
+            SwingUtilities.invokeLater {
+                // update Tournament Message Board, Game Message Board and score of winner
+                guiObject?.updateCurrentGameStatus()
+            }
         } else {
             println("No Game Status received")
         }

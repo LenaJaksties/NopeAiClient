@@ -34,6 +34,14 @@ kotlin {
     jvmToolchain(11)
 }
 
+
+sourceSets {
+    test {
+        kotlin.srcDir("src/test/kotlin")
+        resources.srcDir("src/test/resources")
+    }
+}
+
 application {
     mainClass.set("MainKt")
 }

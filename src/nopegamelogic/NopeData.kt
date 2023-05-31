@@ -89,6 +89,15 @@ data class Card(
     fun getColor(): String {
         return color.color.toLowerCase()
     }
+    fun getSelect():String{
+        return select.toString()
+    }
+    fun getSelectValue():String{
+        return selectValue.toString()
+    }
+    fun getSelectedColor(): String? {
+        return selectedColor?.color?.lowercase()
+    }
 }
 
 data class Move(

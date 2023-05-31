@@ -511,12 +511,16 @@ fun receiveNoticeForMakeAMove() {
             // send back Move
             // Create a separate Gson instance for Card serialization
             val gsonCard = GsonBuilder()
+                .serializeNulls()
                 .registerTypeAdapter(Card::class.java, object : TypeAdapter<Card>() {
                     override fun write(out: JsonWriter, value: Card?) {
                         out.beginObject()
                         out.name("type").value(value?.getType())
                         out.name("color").value(value?.getColor())
                         out.name("value").value(value?.value)
+                        out.name("select").value(value?.select)
+                        out.name("selectValue").value(value?.selectValue)
+                        out.name("selectedColor").value(value?.getSelectedColor())
                         out.endObject()
                     }
 
@@ -528,6 +532,7 @@ fun receiveNoticeForMakeAMove() {
 
             // send back Move
             val gsonSpecial = GsonBuilder()
+                .serializeNulls()
                 .registerTypeAdapter(Move::class.java, object : TypeAdapter<Move>() {
                     override fun write(out: JsonWriter, value: Move?) {
                         out.beginObject()
@@ -535,7 +540,7 @@ fun receiveNoticeForMakeAMove() {
                         out.name("card1").jsonValue(gsonCard.toJsonTree(value?.card1).toString())
                         out.name("card2").jsonValue(gsonCard.toJsonTree(value?.card2).toString())
                         out.name("card3").jsonValue(gsonCard.toJsonTree(value?.card3).toString())
-                        out.name("reason").value(value?.reason)
+                        //out.name("reason").value(value?.reason)
                         out.endObject()
                     }
 
@@ -547,7 +552,7 @@ fun receiveNoticeForMakeAMove() {
 
             val replyMove = aiPlayer.calculateTurn(currentGame)
             currentMove = replyMove
-            Thread.sleep(4500)
+            Thread.sleep(2500)
 
 
             SwingUtilities.invokeLater {
@@ -557,14 +562,16 @@ fun receiveNoticeForMakeAMove() {
 
 
             // wait a bit before the reply is being sent
-            Thread.sleep(4500)
+            Thread.sleep(2500)
             val replyMoveJSONString = gsonSpecial.toJson(replyMove)
 
             println("THIS is my move as a JSON String: ${replyMoveJSONString.toString()}")
             println()
 
+            val jsonObjectMessage = JSONObject(replyMoveJSONString)
+
             if (args.size > 1 && args[1] is Ack) {
-                (args[1] as Ack).call(replyMoveJSONString)
+                (args[1] as Ack).call(jsonObjectMessage)
             }else{
                 println("There was an error with the acknowledgment fort Make a Move")
             }

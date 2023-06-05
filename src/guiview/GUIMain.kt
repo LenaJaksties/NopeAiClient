@@ -1,15 +1,15 @@
 package guiview
-/*import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken*/
-import nopegamelogic.Player
-import nopegamelogic.Tournament
-import nopegamelogic.Type
+
+import nopegamelogic.*
 import socketinterface.*
 import java.awt.*
+import java.awt.Color
 import javax.swing.*
 import javax.swing.table.DefaultTableModel
 
-
+/**
+ * a graphical user interface for the game 'Nope' that lets the player create/chose a Tournament and shows the game moves between ai-players during a tournament
+ */
 class GUIMain : JFrame("Nope Card Game") {
 
     private val scoreTable = JTable()
@@ -38,9 +38,13 @@ class GUIMain : JFrame("Nope Card Game") {
     private val inGamePanel = JPanel()
     private val cardLayout = CardLayout()
 
+    /**
+     * initialises all Game Panels
+     */
     init {
         defaultCloseOperation = EXIT_ON_CLOSE
         setSize(1080, 720)
+
 
         val img = ImageIcon("bin/cover.png")
         setIconImage(img.getImage())
@@ -213,7 +217,6 @@ class GUIMain : JFrame("Nope Card Game") {
         val gbc = GridBagConstraints()
         gbc.fill = GridBagConstraints.BOTH
 
-//        gbc.weighty = 0.2
         val cardPile = JLabel("Discard Pile Cards")
 
 
@@ -222,6 +225,7 @@ class GUIMain : JFrame("Nope Card Game") {
         gbc.gridy = 0
         tempPanel2.add(cardPile,gbc)
         val text1 = JTextArea("current top card:")
+
         gbc.gridx = 0
         gbc.gridy = 1
         tempPanel2.add(text1,gbc)
@@ -272,7 +276,7 @@ class GUIMain : JFrame("Nope Card Game") {
 
 
 
-        val returnButton4 = JButton("leave Tournament")
+        val returnButton4 = JButton("Go to Tournament Overview")
         returnButton4.font = Font("Arial", Font.BOLD, 14)
         returnButton4.preferredSize = Dimension(150, 40)
         returnButton4.background = Color(255,255,255)
@@ -291,7 +295,8 @@ class GUIMain : JFrame("Nope Card Game") {
         invisibleButton.border = BorderFactory.createEmptyBorder(0, 10, 0, 10)
         invisibleButton.addActionListener {
 
-            cardLayout.show(contentPane, "tournamentLobby")
+            // clear current Message Board
+            gameMessageBoard.text = ""
         }
         inGamePanel.add(invisibleButton,BorderLayout.NORTH)
         inGamePanel.add(mainBoxPanel, BorderLayout.CENTER)
@@ -321,13 +326,18 @@ class GUIMain : JFrame("Nope Card Game") {
                     showMessage(this, "You left the tournament", 2000)
                     inTournament = false
                     tournamentCreator = false
-                    // reset current tournament to nothing
+                    // reset current tournament and game to nothing
                     currentTournament.bestOf = null
                     currentTournament.id = null
                     currentTournament.currentSize = null
                     currentTournament.status = null
                     currentTournament.players = null
                     currentTournament.createdAt = null
+                    currentGame = GameState(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
+                    currentMatch = Match(null,null,null,null,null,null,null,null)
+                    currentMove = Move(MoveType.NOPE,null,null,null,"Because I Can!")
+
+                    clearAllMenus()
 
                     cardLayout.show(contentPane, "tournamentLobby")
                 }else{
@@ -338,6 +348,15 @@ class GUIMain : JFrame("Nope Card Game") {
                 showMessage(this, "You cannot leave a tournament as you ar not in one", 2000)
             }
 
+        }
+        val switchRoom = JButton("Go to Game Room")
+        switchRoom.font = Font("Arial", Font.BOLD, 14)
+        switchRoom.preferredSize = Dimension(150, 40)
+        switchRoom.background = Color(233,196,183)
+        switchRoom.border = BorderFactory.createEmptyBorder(0, 0, 0, 0)
+        switchRoom.isBorderPainted = true
+        switchRoom.addActionListener{
+            cardLayout.show(contentPane, "game")
         }
 
         val startTournament = JButton("Start Tournament")
@@ -360,6 +379,7 @@ class GUIMain : JFrame("Nope Card Game") {
             }
         }
 
+        tempPanel.add(switchRoom, BorderLayout.CENTER)
         tempPanel.add(leaveTournament, BorderLayout.WEST)
         tempPanel.add(startTournament, BorderLayout.EAST)
 
@@ -627,6 +647,10 @@ class GUIMain : JFrame("Nope Card Game") {
         model.fireTableRowsInserted(0, tournamentList.size)
 
     }
+
+    /**
+     * updates the list of tournaments
+     */
     fun updateTournamentList(){
 
         tournamentTable.model= DefaultTableModel(arrayOf("Number", "ID", "Current Size", "Date", "status", "Players"), 0 )
@@ -637,6 +661,10 @@ class GUIMain : JFrame("Nope Card Game") {
             tournamentTable.isEnabled = true
         }
     }
+
+    /**
+     * updates the ranking list of the current Tournament
+     */
     fun updateCurrentTournamentScoreList(){
         currentTournamentWinnerTable.model = DefaultTableModel(arrayOf("Player","Score"),0)
         val model = currentTournamentWinnerTable.model as DefaultTableModel
@@ -676,7 +704,19 @@ class GUIMain : JFrame("Nope Card Game") {
             println("Tournament Info $currentTournament")
         }
     }
+
+    /**
+     * update menu lists with information about the current tournament
+     */
     fun updateCurrentTournamentList(){
+
+        if(currentTournament.status == "FINISHED"){
+            // go to Tournament Lobby Room
+            cardLayout.show(contentPane, "game lobby")
+        }else if(currentTournament.status == "IN_PROGRESS"){
+            // go to game room
+            cardLayout.show(contentPane, "game")
+        }
 
         currentTournamentTable.model= DefaultTableModel(arrayOf("ID", "Current Size", "Date", "status", "Players", "Best Of", "Host"), 0 )
         updateCurrentTournament()
@@ -684,14 +724,12 @@ class GUIMain : JFrame("Nope Card Game") {
 
     }
 
+    /**
+     * update menus with information about the current game
+     */
     fun updateCurrentGameStatus(){
-        // update player score of winner
-//        for (i in 0 until (currentGame.players?.size ?: 0)){
-//            if(currentGame.winner?.id == currentGame.players?.get(i)?.id){
-//                currentGame.players?.get(i)?.score = currentGame.winner?.score
-//            }
-//        }
-        // print playerlist and scores again
+
+        // update player scores
         updateGameInfoTextArea()
         // update MessageBoards
         gameMessageBoard.append("${currentGame.message}\n")
@@ -699,6 +737,10 @@ class GUIMain : JFrame("Nope Card Game") {
 
 
     }
+
+    /**
+     * update menus with information about the current match
+     */
     fun updateCurrentMatchInfo(){
 
         updateGameInfoTextArea()
@@ -713,17 +755,49 @@ class GUIMain : JFrame("Nope Card Game") {
         gameInfoTextArea.append("Game id :   ${currentGame.gameId?:""}\n")
         gameInfoTextArea.append("Round: ${currentMatch.round?:""}    (Best of ${currentMatch.bestOf?:""})\n")
         gameInfoTextArea.append("Players :  \n")
-//        gameInfoTextArea.append("        ${currentGame.players?.get(0)?.username?:""} : points ${currentGame.players?.get(0)?.score?:""} \n")
-//        gameInfoTextArea.append("        ${currentGame.players?.get(1)?.username?:""} : points ${currentGame.players?.get(1)?.score?:""} \n")
         gameInfoTextArea.append("        ${currentMatch.opponents?.get(0)?.username?:""} : points ${currentMatch.opponents?.get(0)?.score?:""} \n")
         gameInfoTextArea.append("        ${currentMatch.opponents?.get(1)?.username?:""} : points ${currentMatch.opponents?.get(1)?.score?:""} \n")
     }
+    private fun clearAllMenus(){
+        updateGameState()
+        updateHandCards()
+        updateTopCards()
+        updateCurrentTournamentScoreList()
+        updateCurrentTournamentList()
+        tournamentMessageBoard.text= ""
+        gameMessageBoard.text = ""
+        gameInfoTextArea.text = ""
+        turnInfoTextArea.text = ""
+    }
 
+    /**
+     * print game relevant information inside the text field
+     */
     fun updateGameState(){
         updateHandCards()
         updateTurnInfo()
         updateTopCards()
+
+        gameMessageBoard.append("\nLast Player was ${currentGame.prevPlayerIdx?.let { currentGame.players?.get(it)?.username } ?:"nobody"}\n")
+        gameMessageBoard.append("Last Top Card:\n")
+        gameMessageBoard.append("${currentGame.lastTopCard?.type?:""} ${currentGame.lastTopCard?.color?:""} ${currentGame.lastTopCard?.value?:""} ${currentGame.lastTopCard?.selectValue?:""} ${currentGame.lastTopCard?.selectedColor?:""}\n")
+        gameMessageBoard.append("Current Top Card:\n")
+        gameMessageBoard.append("${currentGame.topCard?.type?:""} ${currentGame.topCard?.color?:""} ${currentGame.topCard?.value?:""} ${currentGame.topCard?.selectValue?:""} ${currentGame.topCard?.selectedColor?:""}\n")
+        gameMessageBoard.append("Last Move:\n")
+        gameMessageBoard.append("Type: ${currentGame.lastMove?.type?:"No last move"}\n")
+        gameMessageBoard.append("Card1: ${currentGame.lastMove?.card1?.type?:""} ${currentGame.lastMove?.card1?.color?:""} ${currentGame.lastMove?.card1?.value?:""} ${currentGame.lastMove?.card1?.selectValue?:""} ${currentGame.lastMove?.card1?.selectedColor?:""}\n")
+        gameMessageBoard.append("Card2: ${currentGame.lastMove?.card2?.type?:""} ${currentGame.lastMove?.card2?.color?:""} ${currentGame.lastMove?.card2?.value?:""} ${currentGame.lastMove?.card2?.selectValue?:""} ${currentGame.lastMove?.card2?.selectedColor?:""}\n")
+        gameMessageBoard.append("Card3: ${currentGame.lastMove?.card3?.type?:""} ${currentGame.lastMove?.card3?.color?:""} ${currentGame.lastMove?.card3?.value?:""} ${currentGame.lastMove?.card3?.selectValue?:""} ${currentGame.lastMove?.card3?.selectedColor?:""}\n")
+        gameMessageBoard.append("It's ${currentGame.currentPlayer?.username?:""}'s turn!\n")
+
+        gameMessageBoard.append("Player: ${currentGame.players?.get(0)?.username?:""} Size of hand:${currentGame.players?.get(0)?.handSize?:""}\n")
+        gameMessageBoard.append("Player: ${currentGame.players?.get(1)?.username?:""} Size of hand:${currentGame.players?.get(1)?.handSize?:""}\n\n")
+
     }
+
+    /**
+     * print the current move of the ai-player
+     */
     fun updateCurrentMove(){
         gameMessageBoard.append("${currentGameMoveNotice.message} \n")
         gameMessageBoard.append("\n")
@@ -732,7 +806,6 @@ class GUIMain : JFrame("Nope Card Game") {
         gameMessageBoard.append("Card1: ${currentMove.card1?.type?:""} ${currentMove.card1?.color?:""} ${currentMove.card1?.value?:""} ${currentMove.card1?.selectValue?:""} ${currentMove.card1?.selectedColor?:""}\n")
         gameMessageBoard.append("Card2: ${currentMove.card2?.type?:""} ${currentMove.card2?.color?:""} ${currentMove.card2?.value?:""} ${currentMove.card2?.selectValue?:""} ${currentMove.card2?.selectedColor?:""}\n")
         gameMessageBoard.append("Card3: ${currentMove.card3?.type?:""} ${currentMove.card3?.color?:""} ${currentMove.card3?.value?:""} ${currentMove.card3?.selectValue?:""} ${currentMove.card3?.selectedColor?:""}\n")
-        gameMessageBoard.append("Reason: ${currentMove.reason}\n")
         gameMessageBoard.append("\n")
 
     }
@@ -819,8 +892,9 @@ class GUIMain : JFrame("Nope Card Game") {
 
 }
 
-
-
+/**
+ * show a message in form of a pop-up notice for a given amount of time on the screen
+ */
 fun showMessage(fr: JFrame, content: String, time: Int) {
     val dialog = JDialog()
     dialog.setSize(900, 50)
@@ -850,7 +924,7 @@ fun showMessage(fr: JFrame, content: String, time: Int) {
     dialog.contentPane.add(panel)
 
     // 1500
-    val timer = Timer(time) { e ->
+    val timer = Timer(time) { _ ->
 
         dialog.dispose()
     }

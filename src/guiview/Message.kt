@@ -1,11 +1,5 @@
 package guiview
 
-import java.awt.BorderLayout
-import java.awt.Color
-import java.awt.Font
-import java.awt.Image
-import javax.swing.*
-
 //fun showMessage(fr: JFrame, content: String, time: Int) {
 //    val dialog = JDialog()
 //    dialog.setSize(900, 50)

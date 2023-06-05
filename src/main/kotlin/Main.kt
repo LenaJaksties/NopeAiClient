@@ -11,13 +11,14 @@ import kotlin.random.Random
 fun main(args: Array<String>) {
 
     // summer/winter/Lena
-    val user = "summer"
 
     //Server URL
     val serverURL = "https://nope-server.azurewebsites.net/"
 
     val restapi = RestApi()
 
+
+    // TODO create small register/login menu
     //Register
 //    restapi.registerUser()
 
@@ -46,13 +47,13 @@ fun main(args: Array<String>) {
     // create handcards
     val card1 = Card(Type.NUMBER, Color.RED,2,null,null,null)
     val card2 = Card(Type.NUMBER, Color.RED,1,null,null,null)
-    val card3 = Card(Type.JOKER, Color.YELLOW_BLUE,3,null,null,null)
+    val card3 = Card(Type.JOKER, Color.MULTI,1,null,null,null)
     val card4 = Card(Type.NUMBER, Color.BLUE,2,null,null,null)
     val card5 = Card(Type.NUMBER, Color.RED_BLUE,3,null,null,null)
     val card6 = Card(Type.NUMBER, Color.RED_GREEN,2,null,null,null)
     val card7 = Card(Type.NUMBER, Color.BLUE_GREEN,1,null,null,null)
-    val card8 = Card(Type.NUMBER, Color.YELLOW_BLUE,1,null,null,null)
-    val card9 = Card(Type.NUMBER, Color.BLUE,1,null,null,null)
+    val card8 = Card(Type.REBOOT, Color.YELLOW_BLUE,1,null,null,null)
+    val card9 = Card(Type.REBOOT, Color.BLUE,1,null,null,null)
     val handCards = ArrayList<Card>()
     handCards.add(card1)
     handCards.add(card2)

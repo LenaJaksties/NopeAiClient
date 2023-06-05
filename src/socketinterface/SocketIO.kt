@@ -148,7 +148,6 @@ fun getCurrentTournaments() {
 
         if (args[0] != null) {
             tournamentList.clear()
-
             val result = gson.toJson(args)
             val jsonTemp = JSONArray(result)
             val tourData = jsonTemp.getJSONObject(0)
@@ -233,9 +232,6 @@ fun getTournamentInfo() {
             val currentSize = jsonObject.getInt("currentSize")
             val message = jsonObject.getString("message")
             val status = jsonObject.getString("status")
-//            val winnerObj = jsonObject.getJSONObject("winner")
-//            val winnerId = winnerObj.getString("id")
-//            val winnerUsername = winnerObj.getString("username")
             val hostObj = jsonObject.getJSONObject("host").getJSONObject("map")
             val hostId = hostObj.getString("id")
             val hostUsername = hostObj.getString("username")
@@ -250,9 +246,11 @@ fun getTournamentInfo() {
                 players.add(player)
             }
             val host = Player(hostId, hostUsername, null,null)
-            // TODO Winner only sometimes
-            //val winner = Player(winnerId, winnerUsername, null)
-            val winner = Player(null, null, null,null)
+
+            val winnerObject = jsonObject.optJSONObject("winner")?.optJSONObject("map")
+            val winner = winnerObject?.let {
+                Player(it.getString("id"), it.getString("username"),it.getInt("score"),null)
+            }
             val tournament = Tournament(tournamentId, currentTournament.createdAt, currentSize, players, status, currentTournament.bestOf, message, host, winner)
             currentTournament = tournament
             println("Received Tournament Info Data: ID: ${currentTournament.id} Message: ${currentTournament.message} Players: ${currentTournament.players} Best of: ${currentTournament.bestOf} Current Size: ${currentTournament.currentSize} Current Host: ${currentTournament.host} Current Winner: ${currentTournament.winner}")
@@ -275,27 +273,14 @@ fun joinTournament(id:String): TournamentInfo{
         if (ackData != null) {
             val result = gson.toJson(ackData)
             val jsonArray = JSONArray(result)
-
+            print("TOURNAMENT JOIN DATA : ${result.toString()}")
             // get data about tournament that you join
             val getTournamentInfo = jsonArray.getJSONObject(0).getJSONObject("map")
             val success = getTournamentInfo.getBoolean("success")
             val error = getTournamentInfo.get("error")
             tournamentInfo.success = success
             if(success){
-
                 tournamentInfo.error = error
-                // get tournament data
-//                val getTournamentData = jsonArray.getJSONObject(0).getJSONObject("map").getJSONObject("data").getJSONObject("map")
-//                val tournamentId = getTournamentData.getString("tournamentId")
-//                val currentSize = getTournamentData.getInt("currentSize")
-//                val bestOf = getTournamentData.getInt("bestOf")
-
-
-//                //if (tournamentInfo.tournamentId != null) {
-//                    //println("Tournament created with ID: ${tournamentInfo.tournamentId}, current size: ${tournamentInfo.currentSize}, best of: ${tournamentInfo.bestOf}")
-//                }else {
-//                println("Error: tournament data is missing or incomplete")
-//                }
             }else{
                 val errorMessage = getTournamentInfo.getJSONObject("error").getJSONObject("map").getString("message")
                 tournamentInfo.error = errorMessage
@@ -328,18 +313,7 @@ fun leaveTournament():TournamentInfo{
             if(success){
 
                 tournamentInfo.error = error
-                // get tournament data
-//                val getTournamentData = jsonArray.getJSONObject(0).getJSONObject("map").getJSONObject("data").getJSONObject("map")
-//                val tournamentId = getTournamentData.getString("tournamentId")
-//                val currentSize = getTournamentData.getInt("currentSize")
-//                val bestOf = getTournamentData.getInt("bestOf")
 
-
-//                //if (tournamentInfo.tournamentId != null) {
-//                    //println("Tournament created with ID: ${tournamentInfo.tournamentId}, current size: ${tournamentInfo.currentSize}, best of: ${tournamentInfo.bestOf}")
-//                }else {
-//                println("Error: tournament data is missing or incomplete")
-//                }
             }else{
                 val errorMessage = getTournamentInfo.getJSONObject("error").getJSONObject("map").getString("message")
                 tournamentInfo.error = errorMessage
@@ -371,18 +345,6 @@ fun startTournament():TournamentInfo{
             if(success){
 
                 tournamentInfo.error = error
-                // get tournament data
-//                val getTournamentData = jsonArray.getJSONObject(0).getJSONObject("map").getJSONObject("data").getJSONObject("map")
-//                val tournamentId = getTournamentData.getString("tournamentId")
-//                val currentSize = getTournamentData.getInt("currentSize")
-//                val bestOf = getTournamentData.getInt("bestOf")
-
-
-//                //if (tournamentInfo.tournamentId != null) {
-//                    //println("Tournament created with ID: ${tournamentInfo.tournamentId}, current size: ${tournamentInfo.currentSize}, best of: ${tournamentInfo.bestOf}")
-//                }else {
-//                println("Error: tournament data is missing or incomplete")
-//                }
             }else{
                 val errorMessage = getTournamentInfo.getJSONObject("error").getJSONObject("map").getString("message")
                 tournamentInfo.error = errorMessage
@@ -670,13 +632,52 @@ fun getGameState() {
                     cardObject.getInt("value"),null,null,null
                 ))
             }
-            //TODO save LAST MOVE
+
+            val lastMoveObject = gameStateObject.optJSONObject("lastMove")?.optJSONObject("map")
+            val lastMove = lastMoveObject?.let {
+
+                var card1Object = it.optJSONObject("card1").optJSONObject("map")
+                val card1 = card1Object?.let{
+                    val color = card1Object.getString("color")
+                    val colorCard = Color.fromTypeString(color)
+                    val type = card1Object.getString("type")
+                    val typeCard = Type.fromTypeString(type)
+                    val value = card1Object.getInt("value")
+                    Card(typeCard!!,colorCard!!,value,null,null,null)
+                }
+                var card2Object = it.optJSONObject("card2").optJSONObject("map")
+                val card2 = card2Object?.let{
+                    val color = card2Object.getString("color")
+                    val colorCard = Color.fromTypeString(color)
+                    val type = card2Object.getString("type")
+                    val typeCard = Type.fromTypeString(type)
+                    val value = card2Object.getInt("value")
+                    Card(typeCard!!,colorCard!!,value,null,null,null)
+                }
+                var card3Object = it.optJSONObject("card3").optJSONObject("map")
+                val card3 = card3Object?.let{
+                    val color = card3Object.getString("color")
+                    val colorCard = Color.fromTypeString(color)
+                    val type = card3Object.getString("type")
+                    val typeCard = Type.fromTypeString(type)
+                    val value = card3Object.getInt("value")
+                    Card(typeCard!!,colorCard!!,value,null,null,null)
+                }
+
+                val type = it.getString("type")
+                val moveType = MoveType.fromTypeString(type)
+
+                Move(moveType!!, card1,card2,card3,"Because I can!")
+            }
+
+
+
             var secondTurn = false
             if(currentPlayerIdx == prevPlayerIdx){
                 secondTurn = true
             }
 
-            currentGame = GameState(matchId,gameId,topCard,lastTopCard,drawPileSize,players,hand,handSize,currentPlayer,currentPlayerIdx,prevPlayer,prevPlayerIdx,prevTurnCards, null,secondTurn,null,null
+            currentGame = GameState(matchId,gameId,topCard,lastTopCard,drawPileSize,players,hand,handSize,currentPlayer,currentPlayerIdx,prevPlayer,prevPlayerIdx,prevTurnCards, lastMove,secondTurn,null,null
 
             )
             println("This is my current game: $currentGame")

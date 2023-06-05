@@ -159,14 +159,14 @@ class AILogic{
 
             if(specialCards){
                 // add only special cards to collection
-                if(card.type != Type.NUMBER ){
+                if(card.type != Type.NUMBER && card.type != Type.JOKER ){
                     var tempCollocation = ArrayList<Card>()
                     tempCollocation.add(card)
                     matchingCardCollocations.add(tempCollocation)
                 }
             } else{
-                // add only number cards to collection
-                if (card.type == Type.NUMBER) {
+                // add only number cards or Joker to collection
+                if (card.type == Type.NUMBER || card.type == Type.JOKER) {
                     var tempCollocation = ArrayList<Card>()
                     tempCollocation.add(card)
                     matchingCardCollocations.add(tempCollocation)

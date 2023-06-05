@@ -154,6 +154,11 @@ enum class MoveType(val moveType: String){
     PUT("put"),
     NOPE("nope");
 
+    companion object {
+        fun fromTypeString(typeString: String): MoveType? {
+            return MoveType.values().find { it.moveType == typeString }
+        }
+    }
     override fun toString(): String {
         return moveType.lowercase()
     }

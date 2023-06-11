@@ -11,7 +11,7 @@ import kotlin.random.Random
 fun main(args: Array<String>) {
 
     // summer/winter/Lena
-
+    val user = "LenaJaksties"
     //Server URL
     val serverURL = "https://nope-server.azurewebsites.net/"
 
@@ -20,7 +20,7 @@ fun main(args: Array<String>) {
 
     // TODO create small register/login menu
     //Register
-//    restapi.registerUser()
+    //    restapi.registerUser(user)
 
     //Login
     val token = restapi.userLogin(user)
@@ -44,7 +44,7 @@ fun main(args: Array<String>) {
 
     val testAILogic = AILogic()
 
-    // create handcards
+    // create hand cards
     val card1 = Card(Type.NUMBER, Color.RED,2,null,null,null)
     val card2 = Card(Type.NUMBER, Color.RED,1,null,null,null)
     val card3 = Card(Type.JOKER, Color.MULTI,1,null,null,null)
@@ -52,8 +52,8 @@ fun main(args: Array<String>) {
     val card5 = Card(Type.NUMBER, Color.RED_BLUE,3,null,null,null)
     val card6 = Card(Type.NUMBER, Color.RED_GREEN,2,null,null,null)
     val card7 = Card(Type.NUMBER, Color.BLUE_GREEN,1,null,null,null)
-    val card8 = Card(Type.REBOOT, Color.YELLOW_BLUE,1,null,null,null)
-    val card9 = Card(Type.REBOOT, Color.BLUE,1,null,null,null)
+    //val card8 = Card(Type.REBOOT, Color.YELLOW_BLUE,1,null,null,null)
+    //val card9 = Card(Type.REBOOT, Color.BLUE,1,null,null,null)
     val handCards = ArrayList<Card>()
     handCards.add(card1)
     handCards.add(card2)
@@ -62,8 +62,16 @@ fun main(args: Array<String>) {
     handCards.add(card5)
     handCards.add(card6)
     handCards.add(card7)
-    handCards.add(card8)
-    handCards.add(card9)
+    //handCards.add(card8)
+    //handCards.add(card9)
+
+
+
+
+
+    for (x in 0 until handCards.size){
+        print("${handCards[x]} \n")
+    }
     // top card and last top card
     val random = Random(System.currentTimeMillis())
 
@@ -78,9 +86,13 @@ fun main(args: Array<String>) {
 
     val cardLastTop = Card(Type.NUMBER, Color.RED,3,null,null,null)
 
-
-    var turnData =  GameState(null,null,cardTop,cardLastTop,null,null,handCards,null,null,null,null,null,null,null,true,null,null)
-    var turnMove = testAILogic.calculateTurn(turnData)
+    val p1 = Player(null,user,null,handCards.size)
+    val p2 = Player(null,"The Opponent",null,6)
+    val players = ArrayList<Player>()
+    players.add(p1)
+    players.add(p2)
+    var turnData =  GameState(null,null,cardTop,cardLastTop,null,players,handCards,handCards.size,null,null,null,null,null,null,true,null,null)
+    var turnMove = testAILogic.calculateTurn(turnData, user)
     println(turnMove)
     println()
 
@@ -93,30 +105,32 @@ fun main(args: Array<String>) {
     // tests for special cards
 
     println("SELECTION Card")
-    turnData =  GameState(null,null,cardS,cardLastTop,null,null,handCards,null,null,null,null,null,null,null,true,null,null)
-    turnMove = testAILogic.calculateTurn(turnData)
+    turnData =  GameState(null,null,cardS,cardLastTop,null,players,handCards,handCards.size,null,null,null,null,null,null,true,null,null)
+    turnMove = testAILogic.calculateTurn(turnData, user)
     println(turnMove)
     println()
     println("SEE THROUGH CARD (FIRST CARD)")
-    turnData =  GameState(null,null,cardS1,null,null,null,handCards,null,null,null,null,null,null,null,true,null,null)
-    turnMove = testAILogic.calculateTurn(turnData)
+    turnData =  GameState(null,null,cardS1,null,null,players,handCards,handCards.size,null,null,null,null,null,null,true,null,null)
+    turnMove = testAILogic.calculateTurn(turnData, user)
     println(turnMove)
     println()
     println("SEE THROUGH CARD (WITH PRIOR CARD)")
-    turnData =  GameState(null,null,cardS1,cardLastTop,null,null,handCards,null,null,null,null,null,null,null,true,null,null)
-    turnMove = testAILogic.calculateTurn(turnData)
+    turnData =  GameState(null,null,cardS1,cardLastTop,null,players,handCards,handCards.size,null,null,null,null,null,null,true,null,null)
+    turnMove = testAILogic.calculateTurn(turnData, user)
     println(turnMove)
     println()
     println("JOKER CARD")
-    turnData =  GameState(null,null,cardS2,cardLastTop,null,null,handCards,null,null,null,null,null,null,null,true,null,null)
-    turnMove = testAILogic.calculateTurn(turnData)
+    turnData =  GameState(null,null,cardS2,cardLastTop,null,players,handCards,handCards.size,null,null,null,null,null,null,true,null,null)
+    turnMove = testAILogic.calculateTurn(turnData, user)
     println(turnMove)
     println()
     println("REBOOT CARD")
-    turnData =  GameState(null,null,cardS3,cardLastTop,null,null,handCards,null,null,null,null,null,null,null,true,null,null)
-    turnMove = testAILogic.calculateTurn(turnData)
+    turnData =  GameState(null,null,cardS3,cardLastTop,null,players,handCards,handCards.size,null,null,null,null,null,null,true,null,null)
+    turnMove = testAILogic.calculateTurn(turnData, user)
     println(turnMove)
     println()
 
 
 }
+
+

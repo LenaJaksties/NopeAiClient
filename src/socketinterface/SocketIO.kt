@@ -512,7 +512,7 @@ fun receiveNoticeForMakeAMove() {
                 })
                 .create()
 
-            val replyMove = aiPlayer.calculateTurn(currentGame)
+            val replyMove = aiPlayer.calculateTurn(currentGame, playerName)
             currentMove = replyMove
             Thread.sleep(2500)
 
@@ -560,20 +560,38 @@ fun getGameState() {
             val type = Type.fromTypeString(currCardType)
             val currCardColor = topCardObject.getString("color")
             val color = Color.fromTypeString(currCardColor)
+            // get Value of card (can be either a number or null)
+            val currCardValue: Int? = topCardObject?.let {
+                when (val value = it.get("value")) {
+                    is Int -> value
+                    is String -> value.toIntOrNull()
+                    else -> null
+                }
+            }
             val topCard = Card(
                 type!!,
                 color!!,
-                topCardObject.getInt("value"),null,null,null
-
+                currCardValue,null,null,null
             )
+
+
             val lastTopCardObject = gameStateObject.optJSONObject("lastTopCard")?.optJSONObject("map")
             val lastTopCard = lastTopCardObject?.let {
                 val currCardType = it.getString("type")
                 val type = Type.fromTypeString(currCardType)
                 val currCardColor = it.getString("color")
                 val color = Color.fromTypeString(currCardColor)
-                Card(type!!,color!! , it.getInt("value"),null,null,null)
+                // get Value of card (can be either a number or null)
+                val currCardValue: Int? = it?.let {
+                    when (val value = it.get("value")) {
+                        is Int -> value
+                        is String -> value.toIntOrNull()
+                        else -> null
+                    }
+                }
+                Card(type!!,color!! , currCardValue,null,null,null)
             }
+
             val drawPileSize = gameStateObject.getInt("drawPileSize")
             val handSize = gameStateObject.getInt("handSize")
 
@@ -599,14 +617,25 @@ fun getGameState() {
                     val type = Type.fromTypeString(currCardType)
                     val currCardColor = cardObject.getString("color")
                     val color = Color.fromTypeString(currCardColor)
+                    // get Value of card (can be either a number or null)
+                    val currCardValue: Int? = cardObject?.let {
+                        when (val value = cardObject.get("value")) {
+                            is Int -> value
+                            is String -> value.toIntOrNull()
+                            else -> null
+                        }
+                    }
+
                     cards.add(Card(
                         type!!,
                         color!!,
-                        cardObject.getInt("value"),null,null,null
+                        currCardValue,null,null,null
                     ))
                 }
                 cards
+
             }
+
 
             val playersArray = gameStateObject.getJSONObject("players").getJSONArray("myArrayList")
             val players = ArrayList<Player>()
@@ -626,10 +655,19 @@ fun getGameState() {
                 val type = Type.fromTypeString(currCardType)
                 val currCardColor = cardObject.getString("color")
                 val color = Color.fromTypeString(currCardColor)
+                // get Value of card (can be either a number or null)
+                val currCardValue: Int? = cardObject?.let {
+                    when (val value = it.get("value")) {
+                        is Int -> value
+                        is String -> value.toIntOrNull()
+                        else -> null
+                    }
+                }
+
                 hand.add(Card(
                     type!!,
                     color!!,
-                    cardObject.getInt("value"),null,null,null
+                    currCardValue,null,null,null
                 ))
             }
 
@@ -642,8 +680,17 @@ fun getGameState() {
                     val colorCard = Color.fromTypeString(color)
                     val type = card1Object.getString("type")
                     val typeCard = Type.fromTypeString(type)
-                    val value = card1Object.getInt("value")
-                    Card(typeCard!!,colorCard!!,value,null,null,null)
+
+                    // get Value of card (can be either a number or null)
+                    val currCardValue: Int? = card1Object?.let {
+                        when (val value = card1Object.get("value")) {
+                            is Int -> value
+                            is String -> value.toIntOrNull()
+                            else -> null
+                        }
+                    }
+
+                    Card(typeCard!!,colorCard!!,currCardValue,null,null,null)
                 }
                 var card2Object = it.optJSONObject("card2").optJSONObject("map")
                 val card2 = card2Object?.let{
@@ -651,8 +698,17 @@ fun getGameState() {
                     val colorCard = Color.fromTypeString(color)
                     val type = card2Object.getString("type")
                     val typeCard = Type.fromTypeString(type)
-                    val value = card2Object.getInt("value")
-                    Card(typeCard!!,colorCard!!,value,null,null,null)
+
+                    // get Value of card (can be either a number or null)
+                    val currCardValue: Int? = card2Object?.let {
+                        when (val value = card2Object.get("value")) {
+                            is Int -> value
+                            is String -> value.toIntOrNull()
+                            else -> null
+                        }
+                    }
+
+                    Card(typeCard!!,colorCard!!,currCardValue,null,null,null)
                 }
                 var card3Object = it.optJSONObject("card3").optJSONObject("map")
                 val card3 = card3Object?.let{
@@ -660,8 +716,16 @@ fun getGameState() {
                     val colorCard = Color.fromTypeString(color)
                     val type = card3Object.getString("type")
                     val typeCard = Type.fromTypeString(type)
-                    val value = card3Object.getInt("value")
-                    Card(typeCard!!,colorCard!!,value,null,null,null)
+
+                    // get Value of card (can be either a number or null)
+                    val currCardValue: Int? = card3Object?.let {
+                        when (val value = card3Object.get("value")) {
+                            is Int -> value
+                            is String -> value.toIntOrNull()
+                            else -> null
+                        }
+                    }
+                    Card(typeCard!!,colorCard!!,currCardValue,null,null,null)
                 }
 
                 val type = it.getString("type")

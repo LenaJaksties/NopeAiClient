@@ -3,12 +3,18 @@ package nopegamelogic
 
 class AILogic{
 
-    fun calculateTurn(turnData: GameState):Move{
-        var turnmove = Move(MoveType.PUT,null,null,null,"Because I can!")
+    fun calculateTurn(turnData: GameState, aiPlayerName: String):Move{
+        val turnmove = Move(MoveType.PUT,null,null,null,"Because I can!")
         // see card on top
 
         println()
         println("TopCard: ${turnData.topCard}")
+
+        // print hand
+        println("My hand: ")
+        for(i in 0 until turnData.hand!!.size){
+            println("$i : (${turnData.hand!![i].type}  ${turnData.hand!![i].color}  ${turnData.hand!![i].value})")
+        }
 
         // see if player has possible card he needs to send and place them in a new ArrayList
         val fittingCardInDeck = findMatchingCards(turnData.hand!!, turnData.topCard!!, turnData.lastTopCard)
@@ -25,7 +31,7 @@ class AILogic{
         if(turnmove.type == MoveType.PUT){
 
             // select cards to send
-            val cardsToSend = calculateSmartDecision(fittingCardInDeck, turnData)
+            val cardsToSend = calculateSmartDecision(fittingCardInDeck, turnData, aiPlayerName)
             if(cardsToSend.isEmpty() || cardsToSend.size > 3){
                 println("Something Went Wrong Choosing a Card to Send")
             } else if(cardsToSend.size == 1){
@@ -77,7 +83,7 @@ class AILogic{
         }else if(lastCard.type == Type.SEE_THROUGH){
             // look at card beneath it (call function again and swap top card)
             if (preLastCard != null) {
-                findMatchingCards(handCards, preLastCard,null)
+                matchingCardCollocations = findMatchingCards(handCards, preLastCard,null)
             }else{
                 // no card prior special rule: put down a single card of the color of the See through card
                 val inputColor = lastCard.color
@@ -120,9 +126,16 @@ class AILogic{
             print("Something went wrong with the type of the top card")
         }
 
+        //matchingCardCollocations = sortListBy(2,matchingCardCollocations)
+        println("My Possibilities to sent: ")
         // print possible list of combinations that can be sent
         for(i in 0 until matchingCardCollocations.size){
-            println("$i : ${matchingCardCollocations[i].size} : ${matchingCardCollocations[i]}")
+            print("$i : ${matchingCardCollocations[i].size} :")
+            for(j in 0 until matchingCardCollocations[i].size){
+                print("(${matchingCardCollocations[i][j].type}  ${matchingCardCollocations[i][j].color}  ${matchingCardCollocations[i][j].value}) \t\t")
+
+            }
+            print("\n")
         }
 
         return matchingCardCollocations
@@ -160,14 +173,14 @@ class AILogic{
             if(specialCards){
                 // add only special cards to collection
                 if(card.type != Type.NUMBER && card.type != Type.JOKER ){
-                    var tempCollocation = ArrayList<Card>()
+                    val tempCollocation = ArrayList<Card>()
                     tempCollocation.add(card)
                     matchingCardCollocations.add(tempCollocation)
                 }
             } else{
                 // add only number cards or Joker to collection
                 if (card.type == Type.NUMBER || card.type == Type.JOKER) {
-                    var tempCollocation = ArrayList<Card>()
+                    val tempCollocation = ArrayList<Card>()
                     tempCollocation.add(card)
                     matchingCardCollocations.add(tempCollocation)
                 }
@@ -268,26 +281,491 @@ class AILogic{
     }
 
 
-    private fun calculateSmartDecision(fittingCardInDeck: ArrayList< ArrayList<Card>>, turndata: GameState): ArrayList<Card> {
+    private fun calculateSmartDecision(fittingCardInDeck: ArrayList< ArrayList<Card>>, turnData: GameState, aiPlayerName: String): ArrayList<Card> {
         var bestMoveCards = ArrayList<Card>()
 
-        // TODO add smart decision
-
+        // Use Special Cards before Normal Cards and Jokers
         // Priority:
-        // 1. Joker, reboot, Select with Color MULTI
-        // 2. Select, See through
+        // 1. Reboot
+        // 2. See through
+        for(i in 0 until fittingCardInDeck.size){
+            // find reboot special card
+            if(fittingCardInDeck[i].size == 1 && fittingCardInDeck[i][0].type == Type.REBOOT){
+                // use reboot card
+                bestMoveCards.addAll(fittingCardInDeck[i])
+                return bestMoveCards
+            }
+        }
+        for(i in 0 until fittingCardInDeck.size){
+            // find see through special card
+            if(fittingCardInDeck[i].size == 1 && fittingCardInDeck[i][0].type == Type.SEE_THROUGH){
+                // use see through card
+                bestMoveCards.addAll(fittingCardInDeck[i])
+                return bestMoveCards
+            }
+        }
+        // get player hand of own ai-player and opponent
+        var myHandSize = 0
+        var opponentHandSize = 0
+        if(turnData.players?.get(0)?.username == aiPlayerName){
+            // found your own user
+            myHandSize = turnData.players!![0].handSize!!
+            opponentHandSize = turnData.players!![1].handSize!!
+        } else{
+            // found opponent
+            opponentHandSize = turnData.players!![0].handSize!!
+            myHandSize = turnData.players!![1].handSize!!
+        }
 
-        //
+        var colorAmount = Array(11){0}
+        for (x in 0 until (turnData.hand?.size ?: 0)){
+            if(turnData.hand!![x].color == Color.RED){
+                colorAmount[0] ++
+            } else if(turnData.hand!![x].color == Color.BLUE){
+                colorAmount[1] ++
+            } else if(turnData.hand!![x].color == Color.GREEN){
+                colorAmount[2] ++
+            } else if(turnData.hand!![x].color == Color.YELLOW){
+                colorAmount[3] ++
+            } else if(turnData.hand!![x].color == Color.RED_YELLOW){
+                colorAmount[4] ++
+            } else if(turnData.hand!![x].color == Color.BLUE_GREEN){
+                colorAmount[5] ++
+            } else if(turnData.hand!![x].color == Color.YELLOW_BLUE){
+                colorAmount[6] ++
+            } else if(turnData.hand!![x].color == Color.RED_BLUE){
+                colorAmount[7] ++
+            } else if(turnData.hand!![x].color == Color.RED_GREEN){
+                colorAmount[8] ++
+            } else if(turnData.hand!![x].color == Color.YELLOW_GREEN){
+                colorAmount[9] ++
+            }else if(turnData.hand!![x].color == Color.MULTI){
+                colorAmount[10] ++
+            }else{
+                println("Card didn't have a color value to use for comparison")
+            }
+        }
+        var redColorsInHand = colorAmount[0]+ colorAmount[4]+ colorAmount[7]+ colorAmount[8]+ colorAmount[10]
+        var blueColorsInHand = colorAmount[1]+ colorAmount[5]+ colorAmount[6]+ colorAmount[7]+ colorAmount[10]
+        var greenColorsInHand = colorAmount[2]+ colorAmount[6]+ colorAmount[8]+ colorAmount[9]+ colorAmount[10]
+        var yellowColorsInHand = colorAmount[3]+ colorAmount[4]+ colorAmount[6]+ colorAmount[9]+ colorAmount[10]
+
+        var colorMostInHand = Color.NULL
+        if(redColorsInHand >= blueColorsInHand && redColorsInHand >= greenColorsInHand && redColorsInHand >= yellowColorsInHand){
+            // red most common
+            colorMostInHand = Color.RED
+        }else if(blueColorsInHand >= redColorsInHand && blueColorsInHand >= greenColorsInHand && blueColorsInHand >= yellowColorsInHand){
+            colorMostInHand = Color.BLUE
+        }else if(greenColorsInHand >= redColorsInHand && greenColorsInHand >= blueColorsInHand && greenColorsInHand >= yellowColorsInHand){
+            colorMostInHand = Color.GREEN
+        }else if(yellowColorsInHand >= redColorsInHand && yellowColorsInHand >= blueColorsInHand && yellowColorsInHand >= greenColorsInHand){
+            colorMostInHand = Color.YELLOW
+        }else{
+            println("Most amount of Color Value couldn't be detected")
+        }
+
+        // make priority List depending on user hand size
+        var priorityCardPossibilities = ArrayList< ArrayList<Card>>()
+
+        if(myHandSize <=5){
+            /*
+            Priority:
+            Joker
+            double-colored 3
+            double-colored 2
+            single-colored 3
+            double-colored 1
+            single-colored 2
+            single-colored 1
+             */
+            bestMoveCards = applyPriorityValue("Joker",1, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Double-Color",3, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Double-Color",2, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Single-Color",3, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Double-Color",1, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Single-Color",2, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Single-Color",1, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+
+        }else if(myHandSize > 5 && opponentHandSize > 6){
+            /*
+            Priority:
+            double-colored 3
+            double-colored 2
+            single-colored 3
+            single-colored 2
+            Joker
+            double-colored 1
+            single-colored 1
+             */
+
+            bestMoveCards = applyPriorityValue("Double-Color",3, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Double-Color",2, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Single-Color",3, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Single-Color",2, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Joker",1, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Double-Color",1, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Single-Color",1, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+
+        }else if(myHandSize > 5 && opponentHandSize>3){
+            /*
+            Priority:
+            double-colored 2
+            single-colored 2
+            Joker
+            double-colored 1
+            single-colored 1
+            double-colored 3
+            single-colored 3
+             */
+            bestMoveCards = applyPriorityValue("Double-Color",2, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Single-Color",2, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Joker",1, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Double-Color",1, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Single-Color",1, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Double-Color",3, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Single-Color",3, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
 
 
+        } else if(myHandSize > 5 && opponentHandSize <=3){
+            /*
+            Priority:
+            Joker
+            double-colored 1
+            single-colored 1
+            double-colored 2
+            single-colored 2
+            double-colored 3
+            single-colored 3
+             */
+            bestMoveCards = applyPriorityValue("Joker",1, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Double-Color",1, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Single-Color",1, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Double-Color",2, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Single-Color",2, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Double-Color",3, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
+            if(bestMoveCards.isEmpty()){
+                bestMoveCards = applyPriorityValue("Single-Color",3, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
+            }
 
-        bestMoveCards.addAll(fittingCardInDeck[0])
 
-
+        }else{
+            print("my hand size or Opponent hand size not found for comparison")
+            bestMoveCards.addAll(fittingCardInDeck[0])
+        }
+        if(bestMoveCards.isEmpty()){
+            println("Error in choosing a smart move no move was chosen! ")
+        }
         // in order (last one top priority)
         return bestMoveCards
     }
 
+    private fun applyPriorityValue(
+        filterType: String,
+        filterValue: Int,
+        fittingCardInDeck: ArrayList<ArrayList<Card>>,
+        turnData: GameState,
+        bestMoveCards: ArrayList<Card>,
+        colorMostInHand: Color
+    ): ArrayList<Card> {
+        var priorityCardPossibilities = ArrayList< ArrayList<Card>>()
+        priorityCardPossibilities = filterPossibilityList(fittingCardInDeck, filterType, filterValue, priorityCardPossibilities)
+        if (priorityCardPossibilities.isNotEmpty()) {
+            // print possibilities:
+
+
+            // select best move possibility to send
+            priorityCardPossibilities = sortListBy(filterValue, priorityCardPossibilities)
+            for(i in 0 until priorityCardPossibilities.size){
+                print("Priority Values: ")
+                for(j in 0 until priorityCardPossibilities[i].size){
+                    print("(${priorityCardPossibilities[i][j].type}  ${priorityCardPossibilities[i][j].color}  ${priorityCardPossibilities[i][j].value}) \t\t")
+
+                }
+                print("\n")
+            }
+            for (i in 0 until priorityCardPossibilities.size) {
+                var hasMatch = ArrayList<ArrayList<Card>>()
+                hasMatch = findMatchingCards(turnData.hand!!, priorityCardPossibilities[i].last(), null)
+                if (hasMatch.size == 0) {
+                    // found match where own player cant put a card on
+                    bestMoveCards.addAll(priorityCardPossibilities[i])
+                    return bestMoveCards
+                }
+            }
+            val twoTypeColors = setOf(
+                Color.RED_YELLOW, Color.BLUE_GREEN, Color.YELLOW_BLUE,
+                Color.RED_BLUE, Color.RED_GREEN, Color.YELLOW_GREEN
+            )
+            // check if the card before the last card has the same type and should be sent last
+            for(i in 0 until priorityCardPossibilities.size){
+                if(priorityCardPossibilities[i].size > 1){
+                    var lastCard = priorityCardPossibilities[i].last()
+                    for(j in priorityCardPossibilities[i].size -2 downTo 0){
+                        // check if conditions are met
+                        if(priorityCardPossibilities[i][j].value == lastCard.value && priorityCardPossibilities[i][j].type == lastCard.type && (priorityCardPossibilities[i][j].color == lastCard.color || priorityCardPossibilities[i][j].color in twoTypeColors && lastCard.color in twoTypeColors || priorityCardPossibilities[i][j].color !in twoTypeColors && lastCard.color !in twoTypeColors)){
+                            var hasMatch = ArrayList<ArrayList<Card>>()
+                            hasMatch = findMatchingCards(turnData.hand!!, priorityCardPossibilities[i][j], null)
+                            if (hasMatch.size == 0) {
+                                // found match where own player cant put a card on
+                                // swap cards in arraylist
+                                priorityCardPossibilities[i] = swap2Cards(priorityCardPossibilities[i], lastCard, priorityCardPossibilities[i][j])
+                                bestMoveCards.addAll(priorityCardPossibilities[i])
+                                return bestMoveCards
+                            }
+                        }
+
+                    }
+                }
+
+            }
+            for (i in 0 until priorityCardPossibilities.size) {
+                if (colorMostInHand.color in priorityCardPossibilities[i].last().color.color || colorMostInHand.color == priorityCardPossibilities[i].last().color.color) {
+                    // found match for color that own player has most
+                    bestMoveCards.addAll(priorityCardPossibilities[i])
+                    return bestMoveCards
+                }
+                // check other cards in current possibility
+                if(priorityCardPossibilities[i].size > 1){
+                    var lastCard = priorityCardPossibilities[i].last()
+                    for(j in priorityCardPossibilities[i].size -2 downTo 0){
+                        // check if conditions are met
+                        if(priorityCardPossibilities[i][j].value == lastCard.value && priorityCardPossibilities[i][j].type == lastCard.type && (priorityCardPossibilities[i][j].color == lastCard.color || priorityCardPossibilities[i][j].color in twoTypeColors && lastCard.color in twoTypeColors || priorityCardPossibilities[i][j].color !in twoTypeColors && lastCard.color !in twoTypeColors)){
+
+                            if (colorMostInHand.color in priorityCardPossibilities[i][j].color.color || colorMostInHand.color == priorityCardPossibilities[i][j].color.color) {
+                                // found match where own player cant put a card on
+                                // swap cards in arraylist
+                                priorityCardPossibilities[i] = swap2Cards(priorityCardPossibilities[i], lastCard, priorityCardPossibilities[i][j])
+                                bestMoveCards.addAll(priorityCardPossibilities[i])
+                                return bestMoveCards
+                            }
+                        }
+
+                    }
+                }
+
+            }
+            bestMoveCards.addAll(priorityCardPossibilities[0])
+            return bestMoveCards
+        }else{
+            return bestMoveCards
+        }
+    }
+
+    /**
+     * swaps two cards inside the input Arraylist of cards
+     */
+    private fun swap2Cards(cards: ArrayList<Card>, lastCard: Card, card: Card): ArrayList<Card> {
+        val lastIndex = cards.indexOf(lastCard)
+        val cardIndex = cards.indexOf(card)
+
+        // Check if both cards are present in the list
+        if (lastIndex != -1 && cardIndex != -1) {
+            // swap cards
+            val temp = cards[lastIndex]
+            cards[lastIndex] = cards[cardIndex]
+            cards[cardIndex] = temp
+        }
+
+        return cards
+
+    }
+
+    /**
+     * Filters a list by the input Type and Value and return a filtered list of lists of cards
+     */
+    private fun filterPossibilityList(
+        fittingCardInDeck: ArrayList<ArrayList<Card>>,
+        filterType: String,
+        filterValue: Int,
+        priorityCardPossibilities: ArrayList<ArrayList<Card>>
+    ): ArrayList<ArrayList<Card>> {
+
+        val twoTypeColors = setOf(
+            Color.RED_YELLOW, Color.BLUE_GREEN, Color.YELLOW_BLUE,
+            Color.RED_BLUE, Color.RED_GREEN, Color.YELLOW_GREEN
+        )
+
+        for (i in 0 until fittingCardInDeck.size) {
+
+            for (j in 0 until fittingCardInDeck[i].size) {
+
+                if(filterType == "Double-Color"){
+                    // find possibilities with double value cards
+                    if (fittingCardInDeck[i][j].color in twoTypeColors && fittingCardInDeck[i][j].value == filterValue) {
+
+                        var tempCollocation = ArrayList<Card>()
+                        tempCollocation.addAll(fittingCardInDeck[i])
+                        priorityCardPossibilities.add(tempCollocation)
+                        break;
+                    }
+                }else if(filterType == "Single-Color"){
+                    if (fittingCardInDeck[i][j].color !in twoTypeColors && fittingCardInDeck[i][j].value == filterValue) {
+
+                        var tempCollocation = ArrayList<Card>()
+                        tempCollocation.addAll(fittingCardInDeck[i])
+                        priorityCardPossibilities.add(tempCollocation)
+                        break;
+                    }
+                }else if(filterType == "Joker"){
+                    if (fittingCardInDeck[i][j].type == Type.JOKER && fittingCardInDeck[i][j].value == filterValue) {
+
+                        var tempCollocation = ArrayList<Card>()
+                        tempCollocation.addAll(fittingCardInDeck[i])
+                        priorityCardPossibilities.add(tempCollocation)
+                        break;
+                    }
+
+                }else{
+                    print("There was given a filter type that is unknown")
+                }
+
+            }
+        }
+        return priorityCardPossibilities
+    }
+
+    /**
+     * Sort a List by a given input value
+     * Puts the input type last
+     * 0 -> Joker
+     * 1 -> Value 1
+     * 2 -> Value 2
+     * 3 -> Value 3
+     */
+    private fun sortListBy(number: Int, priorityCardPossibilities: ArrayList<ArrayList<Card>>): ArrayList<ArrayList<Card>>{
+
+        val twoTypeColors = setOf(
+            Color.RED_YELLOW, Color.BLUE_GREEN, Color.YELLOW_BLUE,
+            Color.RED_BLUE, Color.RED_GREEN, Color.YELLOW_GREEN
+        )
+        for (x in 0 until priorityCardPossibilities.size){
+            val tempCardListWith1 = ArrayList<Card>()
+            val tempCardListWith1DoubleColor = ArrayList<Card>()
+            val tempCardListWith1Joker = ArrayList<Card>()
+            val tempCardListWith2 = ArrayList<Card>()
+            val tempCardListWith2DoubleColor = ArrayList<Card>()
+            val tempCardListWith3 = ArrayList<Card>()
+            val tempCardListWith3DoubleColor = ArrayList<Card>()
+            val tempCardListWithNull = ArrayList<Card>()
+            // temporary Store Cards in ArrayLists for later sorting
+            for(y in 0 until priorityCardPossibilities[x].size){
+                if(priorityCardPossibilities[x][y].value == 1){
+                    // differentiate between Joker single-color and double-color
+                    if(priorityCardPossibilities[x][y].type == Type.JOKER){
+                        tempCardListWith1Joker.add(priorityCardPossibilities[x][y])
+                    } else if(priorityCardPossibilities[x][y].color in twoTypeColors){
+                        tempCardListWith1DoubleColor.add(priorityCardPossibilities[x][y])
+                    }else{
+                        tempCardListWith1.add(priorityCardPossibilities[x][y])
+                    }
+                }else if(priorityCardPossibilities[x][y].value == 2){
+                    if(priorityCardPossibilities[x][y].color in twoTypeColors){
+                        tempCardListWith2DoubleColor.add(priorityCardPossibilities[x][y])
+                    }else {
+                        tempCardListWith2.add(priorityCardPossibilities[x][y])
+                    }
+                }else if(priorityCardPossibilities[x][y].value == 3){
+                    if(priorityCardPossibilities[x][y].color in twoTypeColors){
+                        tempCardListWith3DoubleColor.add(priorityCardPossibilities[x][y])
+                    }else {
+                        tempCardListWith3.add(priorityCardPossibilities[x][y])
+                    }
+                }else{
+                    tempCardListWithNull.add(priorityCardPossibilities[x][y])
+                }
+            }
+
+            priorityCardPossibilities[x].clear()
+            priorityCardPossibilities[x].addAll(tempCardListWithNull)
+
+            if(number == 0){
+                priorityCardPossibilities[x].addAll(tempCardListWith3)
+                priorityCardPossibilities[x].addAll(tempCardListWith3DoubleColor)
+                priorityCardPossibilities[x].addAll(tempCardListWith2)
+                priorityCardPossibilities[x].addAll(tempCardListWith2DoubleColor)
+                priorityCardPossibilities[x].addAll(tempCardListWith1)
+                priorityCardPossibilities[x].addAll(tempCardListWith1DoubleColor)
+                // store joker last
+                priorityCardPossibilities[x].addAll(tempCardListWith1Joker)
+            }else if(number == 1){
+                priorityCardPossibilities[x].addAll(tempCardListWith3)
+                priorityCardPossibilities[x].addAll(tempCardListWith3DoubleColor)
+                priorityCardPossibilities[x].addAll(tempCardListWith2)
+                priorityCardPossibilities[x].addAll(tempCardListWith2DoubleColor)
+                priorityCardPossibilities[x].addAll(tempCardListWith1Joker)
+                // store Cards with Value 1 last
+                priorityCardPossibilities[x].addAll(tempCardListWith1)
+                priorityCardPossibilities[x].addAll(tempCardListWith1DoubleColor)
+            }else if (number == 2){
+                priorityCardPossibilities[x].addAll(tempCardListWith1)
+                priorityCardPossibilities[x].addAll(tempCardListWith1Joker)
+                priorityCardPossibilities[x].addAll(tempCardListWith1DoubleColor)
+                priorityCardPossibilities[x].addAll(tempCardListWith3)
+                priorityCardPossibilities[x].addAll(tempCardListWith3DoubleColor)
+                // store Cards with Value 2 last
+                priorityCardPossibilities[x].addAll(tempCardListWith2)
+                priorityCardPossibilities[x].addAll(tempCardListWith2DoubleColor)
+            }else if(number == 3){
+                priorityCardPossibilities[x].addAll(tempCardListWith1)
+                priorityCardPossibilities[x].addAll(tempCardListWith1Joker)
+                priorityCardPossibilities[x].addAll(tempCardListWith1DoubleColor)
+                priorityCardPossibilities[x].addAll(tempCardListWith2)
+                priorityCardPossibilities[x].addAll(tempCardListWith2DoubleColor)
+                // store Cards with Value 3 last
+                priorityCardPossibilities[x].addAll(tempCardListWith3)
+                priorityCardPossibilities[x].addAll(tempCardListWith3DoubleColor)
+            }else{
+                println("Illegal sorting value used")
+            }
+        }
+        return priorityCardPossibilities
+    }
 
 
 

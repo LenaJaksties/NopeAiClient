@@ -20,7 +20,7 @@ import javax.swing.SwingUtilities
  *  game relevant data
  */
 
-// Create an empty ArrayList
+// Variables to store current Game Data in
 var tournamentList = ArrayList<Tournament>()
 
 var currentTournament = Tournament(null,null,null,null,null,null, null, null,null)
@@ -46,12 +46,12 @@ var mSocket : Socket? = null
 var guiObject: GUIMain? = null
 val gson = Gson()
 
-fun socketinit(serverURL:String, access_token: Accesstoken, gui:GUIMain, pName:String): Socket?{
+fun socketInit(serverURL:String, accessToken: AccessToken, gui:GUIMain, pName:String): Socket?{
 
 
-    var token = access_token
+    val token = accessToken
     val gson = Gson()
-    val tokenjwt = gson.toJson(token)
+    gson.toJson(token)
     guiObject = gui
     playerName = pName
 
@@ -59,10 +59,9 @@ fun socketinit(serverURL:String, access_token: Accesstoken, gui:GUIMain, pName:S
     try {
         val opts = IO.Options.builder()
             .setTransports(arrayOf(io.socket.engineio.client.transports.WebSocket.NAME))
-            //.setQuery("token=$tokenjwt")
             .setAuth(singletonMap("token", token.accessToken))
             .build()
-        mSocket = IO.socket(URI.create("https://nope-server.azurewebsites.net/"), opts)
+        mSocket = IO.socket(URI.create(serverURL), opts)
     } catch (e: URISyntaxException) {
         e.printStackTrace()
     }
@@ -73,7 +72,7 @@ fun socketinit(serverURL:String, access_token: Accesstoken, gui:GUIMain, pName:S
 
 fun connect() {
     val socket = mSocket!!.connect()
-    socket.on(Socket.EVENT_CONNECT,{println("Connected")}).on(Socket.EVENT_CONNECT_ERROR, {println(it.joinToString())})
+    socket.on(Socket.EVENT_CONNECT) { println("Connected") }.on(Socket.EVENT_CONNECT_ERROR) { println(it.joinToString()) }
     // put Socket.On functions here
     getCurrentTournaments()
     getPlayerInfo()
@@ -129,7 +128,7 @@ fun createTournament(number: Int): TournamentInfo {
                 tournamentInfo.error =errorMessage
                 println("Error: tournament creation failed : $errorMessage")
             }
-            println("Acknowledgement received - Success: CREATE Tournament ${result.toString()}")
+            println("Acknowledgement received - Success: CREATE Tournament $result")
 
         } else {
             // Handle acknowledgement failure
@@ -144,7 +143,7 @@ fun createTournament(number: Int): TournamentInfo {
 fun getCurrentTournaments() {
 
     mSocket?.off("list:tournaments")
-    mSocket?.on("list:tournaments", Emitter.Listener { args ->
+    mSocket?.on("list:tournaments") { args ->
 
         if (args[0] != null) {
             tournamentList.clear()
@@ -163,10 +162,15 @@ fun getCurrentTournaments() {
                 val players = ArrayList<Player>()
                 val getPlayerData = tournamentData.getJSONObject("players").getJSONArray("myArrayList")
                 for (j in 0 until getPlayerData.length()) {
-                    val newP = Player(null, getPlayerData.getJSONObject(j).getJSONObject("map").getString("username"),null,null)
+                    val newP = Player(
+                        null,
+                        getPlayerData.getJSONObject(j).getJSONObject("map").getString("username"),
+                        null,
+                        null
+                    )
                     players.add(newP)
                 }
-                val newTournament = Tournament(id, createdAt, currentSize, players, status,null, null,null,null)
+                val newTournament = Tournament(id, createdAt, currentSize, players, status, null, null, null, null)
                 if (newTournament.id != null) {
                     println("New Entry found: ${tournamentList.size} TournamentID: ${newTournament.id}, current size: ${newTournament.currentSize}, createdAt:  ${newTournament.createdAt}, status:  ${newTournament.status}, players:  ${newTournament.players}")
                 } else {
@@ -184,12 +188,12 @@ fun getCurrentTournaments() {
         } else {
             println("No tournaments received")
         }
-    })
+    }
 }
 
 fun getPlayerInfo() {
     mSocket?.off("tournament:playerInfo")
-    mSocket?.on("tournament:playerInfo", Emitter.Listener { args ->
+    mSocket?.on("tournament:playerInfo") { args ->
         if (args[0] != null) {
             val result = gson.toJson(args)
             val tournamentData = JSONArray(result).getJSONObject(0).getJSONObject("map")
@@ -201,7 +205,7 @@ fun getPlayerInfo() {
             val players = ArrayList<Player>()
             for (i in 0 until playersArray.length()) {
                 val playerData = playersArray.getJSONObject(i).getJSONObject("map")
-                val newPlayer = Player(playerData.getString("id"), playerData.getString("username"),null,null)
+                val newPlayer = Player(playerData.getString("id"), playerData.getString("username"), null, null)
                 players.add(newPlayer)
             }
             currentTournament.id = tournamentId
@@ -218,12 +222,12 @@ fun getPlayerInfo() {
         } else {
             println("No Player Data received")
         }
-    })
+    }
 }
 
 fun getTournamentInfo() {
     mSocket?.off("tournament:info")
-    mSocket?.on("tournament:info", Emitter.Listener { args ->
+    mSocket?.on("tournament:info") { args ->
         if (args[0] != null) {
             val result = gson.toJson(args)
             val jsonArray = JSONArray(result)
@@ -242,19 +246,29 @@ fun getTournamentInfo() {
                 val playerId = playerObj.getString("id")
                 val playerUsername = playerObj.getString("username")
                 val playerScore = playerObj.getInt("score")
-                val player = Player(playerId, playerUsername, playerScore,null)
+                val player = Player(playerId, playerUsername, playerScore, null)
                 players.add(player)
             }
-            val host = Player(hostId, hostUsername, null,null)
+            val host = Player(hostId, hostUsername, null, null)
 
             val winnerObject = jsonObject.optJSONObject("winner")?.optJSONObject("map")
             val winner = winnerObject?.let {
-                Player(it.getString("id"), it.getString("username"),it.getInt("score"),null)
+                Player(it.getString("id"), it.getString("username"), it.getInt("score"), null)
             }
-            val tournament = Tournament(tournamentId, currentTournament.createdAt, currentSize, players, status, currentTournament.bestOf, message, host, winner)
+            val tournament = Tournament(
+                tournamentId,
+                currentTournament.createdAt,
+                currentSize,
+                players,
+                status,
+                currentTournament.bestOf,
+                message,
+                host,
+                winner
+            )
             currentTournament = tournament
             println("Received Tournament Info Data: ID: ${currentTournament.id} Message: ${currentTournament.message} Players: ${currentTournament.players} Best of: ${currentTournament.bestOf} Current Size: ${currentTournament.currentSize} Current Host: ${currentTournament.host} Current Winner: ${currentTournament.winner}")
-            println("Received Tournament info: ${result.toString()} \n")
+            println("Received Tournament info: $result \n")
             SwingUtilities.invokeLater {
                 // update GUI components here
                 guiObject?.updateCurrentTournamentList()
@@ -263,7 +277,7 @@ fun getTournamentInfo() {
         } else {
             println("No Tournament Data received")
         }
-    })
+    }
 }
 
 
@@ -273,7 +287,7 @@ fun joinTournament(id:String): TournamentInfo{
         if (ackData != null) {
             val result = gson.toJson(ackData)
             val jsonArray = JSONArray(result)
-            print("TOURNAMENT JOIN DATA : ${result.toString()}")
+            print("TOURNAMENT JOIN DATA : $result")
             // get data about tournament that you join
             val getTournamentInfo = jsonArray.getJSONObject(0).getJSONObject("map")
             val success = getTournamentInfo.getBoolean("success")
@@ -286,7 +300,7 @@ fun joinTournament(id:String): TournamentInfo{
                 tournamentInfo.error = errorMessage
                 println("Error: tournament join  failed : $errorMessage")
             }
-            println("Acknowledgement received - Success: JOIN Tournament  ${jsonArray.toString()}")
+            println("Acknowledgement received - Success: JOIN Tournament  $jsonArray")
             getCurrentTournaments()
         } else {
             // Handle acknowledgement failure
@@ -319,7 +333,7 @@ fun leaveTournament():TournamentInfo{
                 tournamentInfo.error = errorMessage
                 println("Error: tournament leave  failed : $errorMessage")
             }
-            println("Acknowledgement received - Success: LEAVE Tournament ${result.toString()}")
+            println("Acknowledgement received - Success: LEAVE Tournament $result")
             getCurrentTournaments()
         } else {
             // Handle acknowledgement failure
@@ -350,7 +364,7 @@ fun startTournament():TournamentInfo{
                 tournamentInfo.error = errorMessage
                 println("Error: tournament start  failed : $errorMessage")
             }
-            println("Acknowledgement received - Success: START Tournament ${result.toString()}")
+            println("Acknowledgement received - Success: START Tournament $result")
             getCurrentTournaments()
         } else {
             // Handle acknowledgement failure
@@ -363,7 +377,7 @@ fun startTournament():TournamentInfo{
 
 fun receiveMatchInvitation() {
     mSocket?.off("match:invite")
-    mSocket?.on("match:invite", Emitter.Listener { args ->
+    mSocket?.on("match:invite") { args ->
 //        val playerId = get
 //        val sendAck = Ack { true,currentGame. }
         if (args[0] != null) {
@@ -379,7 +393,7 @@ fun receiveMatchInvitation() {
                 val playerObject = playersArray.getJSONObject(i).getJSONObject("map")
                 val playerId = playerObject.getString("id")
                 val playerUsername = playerObject.getString("username")
-                val player = Player(playerId, playerUsername,null,null)
+                val player = Player(playerId, playerUsername, null, null)
                 players.add(player)
                 if (playerUsername == playerName) {
                     myId = playerId
@@ -388,15 +402,15 @@ fun receiveMatchInvitation() {
             val message = mapObject.getString("message")
             val matchId = mapObject.getString("matchId")
             val matchInformation = MatchInvitation(invitationTimeout, players, message, matchId)
-            println("Received MatchInvitation: ${matchInformation.toString()} \n")
+            println("Received MatchInvitation: $matchInformation \n")
 
-            println("Received MatchInvitation: ${result.toString()} \n")
+            println("Received MatchInvitation: $result \n")
             // Send acknowledgement with true and my id
             if (myId != null) {
-                val reply = InvitationReply(true,myId)
+                val reply = InvitationReply(true, myId)
                 val message = gson.toJson(reply)
                 val message2 = JSONObject(message)
-                println("THIS is what I send: ${message2.toString()}")
+                println("THIS is what I send: $message2")
 
                 if (args.size > 1 && args[1] is Ack) {
                     (args[1] as Ack).call(message2)
@@ -407,12 +421,12 @@ fun receiveMatchInvitation() {
         } else {
             println("No MatchInvitation received")
         }
-    })
+    }
 }
 
 fun getMatchInfo() {
     mSocket?.off("match:info")
-    mSocket?.on("match:info", Emitter.Listener { args ->
+    mSocket?.on("match:info") { args ->
         if (args[0] != null) {
             val result = gson.toJson(args)
             println(result.toString())
@@ -434,14 +448,14 @@ fun getMatchInfo() {
                     val id = opponentObj.getString("id")
                     val username = opponentObj.getString("username")
                     val points = opponentObj.getInt("points")
-                    val opponent = Player(id, username, points,null)
+                    val opponent = Player(id, username, points, null)
                     opponents.add(opponent)
                 }
                 opponents
             }
             val winnerObject = matchObj.optJSONObject("winner")?.optJSONObject("map")
             val winner = winnerObject?.let {
-                Player(it.getString("id"), it.getString("username"),it.getInt("points"),null)
+                Player(it.getString("id"), it.getString("username"), it.getInt("points"), null)
             }
             val match = Match(message, tournamentId, id, round, bestOf, status, opponentList, winner)
             currentMatch = match
@@ -453,12 +467,12 @@ fun getMatchInfo() {
         } else {
             println("No Match Data received")
         }
-    })
+    }
 }
 
 fun receiveNoticeForMakeAMove() {
     mSocket?.off("game:makeMove")
-    mSocket?.on("game:makeMove", Emitter.Listener { args ->
+    mSocket?.on("game:makeMove") { args ->
 
         if (args[0] != null) {
             val result = gson.toJson(args)
@@ -467,7 +481,7 @@ fun receiveNoticeForMakeAMove() {
             val jsonObject = jsonArray.getJSONObject(0).getJSONObject("map")
             val message = jsonObject.getString("message")
             val time = jsonObject.getInt("timeout")
-            var gameMoveNotive = GameMoveNotice(message,time)
+            val gameMoveNotive = GameMoveNotice(message, time)
             currentGameMoveNotice = gameMoveNotive
 
             // send back Move
@@ -527,14 +541,14 @@ fun receiveNoticeForMakeAMove() {
             Thread.sleep(2500)
             val replyMoveJSONString = gsonSpecial.toJson(replyMove)
 
-            println("THIS is my move as a JSON String: ${replyMoveJSONString.toString()}")
+            println("THIS is my move as a JSON String: $replyMoveJSONString")
             println()
 
             val jsonObjectMessage = JSONObject(replyMoveJSONString)
 
             if (args.size > 1 && args[1] is Ack) {
                 (args[1] as Ack).call(jsonObjectMessage)
-            }else{
+            } else {
                 println("There was an error with the acknowledgment fort Make a Move")
             }
 
@@ -542,11 +556,11 @@ fun receiveNoticeForMakeAMove() {
         } else {
             println("No Notice For Make A Move received")
         }
-    })
+    }
 }
 fun getGameState() {
     mSocket?.off("game:state")
-    mSocket?.on("game:state", Emitter.Listener { args ->
+    mSocket?.on("game:state") { args ->
         println("!!!!!!!!!!!!!!!!GAME STATE !!!!!!!!!!!!!!!!!!")
         if (args[0] != null) {
             val result = gson.toJson(args)
@@ -571,7 +585,7 @@ fun getGameState() {
             val topCard = Card(
                 type!!,
                 color!!,
-                currCardValue,null,null,null
+                currCardValue, null, null, null
             )
 
 
@@ -589,7 +603,7 @@ fun getGameState() {
                         else -> null
                     }
                 }
-                Card(type!!,color!! , currCardValue,null,null,null)
+                Card(type!!, color!!, currCardValue, null, null, null)
             }
 
             val drawPileSize = gameStateObject.getInt("drawPileSize")
@@ -598,13 +612,13 @@ fun getGameState() {
             val currentPlayerObject = gameStateObject.getJSONObject("currentPlayer").getJSONObject("map")
             val currentPlayer = Player(
                 currentPlayerObject.getString("id"),
-                currentPlayerObject.getString("username"), null,null
+                currentPlayerObject.getString("username"), null, null
             )
             val currentPlayerIdx = gameStateObject.getInt("currentPlayerIdx")
 
             val prevPlayerObject = gameStateObject.optJSONObject("prevPlayer")?.optJSONObject("map")
             val prevPlayer = prevPlayerObject?.let {
-                Player(it.getString("id"), it.getString("username"),null,null)
+                Player(it.getString("id"), it.getString("username"), null, null)
             }
             val prevPlayerIdx = gameStateObject.opt("prevPlayerIdx") as? Int
 
@@ -626,11 +640,13 @@ fun getGameState() {
                         }
                     }
 
-                    cards.add(Card(
-                        type!!,
-                        color!!,
-                        currCardValue,null,null,null
-                    ))
+                    cards.add(
+                        Card(
+                            type!!,
+                            color!!,
+                            currCardValue, null, null, null
+                        )
+                    )
                 }
                 cards
 
@@ -644,7 +660,7 @@ fun getGameState() {
                 val playerId = playerObject.getString("id")
                 val playerUsername = playerObject.getString("username")
                 val playerHandSize = playerObject.getInt("handSize")
-                players.add(Player(playerId, playerUsername,null, playerHandSize))
+                players.add(Player(playerId, playerUsername, null, playerHandSize))
             }
 
             val handArray = gameStateObject.getJSONObject("hand").getJSONArray("myArrayList")
@@ -664,18 +680,20 @@ fun getGameState() {
                     }
                 }
 
-                hand.add(Card(
-                    type!!,
-                    color!!,
-                    currCardValue,null,null,null
-                ))
+                hand.add(
+                    Card(
+                        type!!,
+                        color!!,
+                        currCardValue, null, null, null
+                    )
+                )
             }
 
             val lastMoveObject = gameStateObject.optJSONObject("lastMove")?.optJSONObject("map")
             val lastMove = lastMoveObject?.let {
 
-                var card1Object = it.optJSONObject("card1").optJSONObject("map")
-                val card1 = card1Object?.let{
+                val card1Object = it.optJSONObject("card1").optJSONObject("map")
+                val card1 = card1Object?.let {
                     val color = card1Object.getString("color")
                     val colorCard = Color.fromTypeString(color)
                     val type = card1Object.getString("type")
@@ -690,10 +708,10 @@ fun getGameState() {
                         }
                     }
 
-                    Card(typeCard!!,colorCard!!,currCardValue,null,null,null)
+                    Card(typeCard!!, colorCard!!, currCardValue, null, null, null)
                 }
-                var card2Object = it.optJSONObject("card2").optJSONObject("map")
-                val card2 = card2Object?.let{
+                val card2Object = it.optJSONObject("card2").optJSONObject("map")
+                val card2 = card2Object?.let {
                     val color = card2Object.getString("color")
                     val colorCard = Color.fromTypeString(color)
                     val type = card2Object.getString("type")
@@ -708,10 +726,10 @@ fun getGameState() {
                         }
                     }
 
-                    Card(typeCard!!,colorCard!!,currCardValue,null,null,null)
+                    Card(typeCard!!, colorCard!!, currCardValue, null, null, null)
                 }
-                var card3Object = it.optJSONObject("card3").optJSONObject("map")
-                val card3 = card3Object?.let{
+                val card3Object = it.optJSONObject("card3").optJSONObject("map")
+                val card3 = card3Object?.let {
                     val color = card3Object.getString("color")
                     val colorCard = Color.fromTypeString(color)
                     val type = card3Object.getString("type")
@@ -725,27 +743,43 @@ fun getGameState() {
                             else -> null
                         }
                     }
-                    Card(typeCard!!,colorCard!!,currCardValue,null,null,null)
+                    Card(typeCard!!, colorCard!!, currCardValue, null, null, null)
                 }
 
                 val type = it.getString("type")
                 val moveType = MoveType.fromTypeString(type)
 
-                Move(moveType!!, card1,card2,card3,"Because I can!")
+                Move(moveType!!, card1, card2, card3, "Because I can!")
             }
-
 
 
             var secondTurn = false
-            if(currentPlayerIdx == prevPlayerIdx){
+            if (currentPlayerIdx == prevPlayerIdx) {
                 secondTurn = true
             }
 
-            currentGame = GameState(matchId,gameId,topCard,lastTopCard,drawPileSize,players,hand,handSize,currentPlayer,currentPlayerIdx,prevPlayer,prevPlayerIdx,prevTurnCards, lastMove,secondTurn,null,null
+            currentGame = GameState(
+                matchId,
+                gameId,
+                topCard,
+                lastTopCard,
+                drawPileSize,
+                players,
+                hand,
+                handSize,
+                currentPlayer,
+                currentPlayerIdx,
+                prevPlayer,
+                prevPlayerIdx,
+                prevTurnCards,
+                lastMove,
+                secondTurn,
+                null,
+                null
 
             )
             println("This is my current game: $currentGame")
-            println("Received Game State: ${result.toString()} \n")
+            println("Received Game State: $result \n")
             SwingUtilities.invokeLater {
                 // update GUI components here
                 guiObject?.updateGameState()
@@ -753,11 +787,11 @@ fun getGameState() {
         } else {
             println("No Game State received")
         }
-    })
+    }
 }
 fun getGameStatus() {
     mSocket?.off("game:status")
-    mSocket?.on("game:status", Emitter.Listener { args ->
+    mSocket?.on("game:status") { args ->
         if (args[0] != null) {
             val result = gson.toJson(args)
 
@@ -776,7 +810,7 @@ fun getGameStatus() {
             currentGame.winner = winner
             currentGame.message = message
 
-            println("Received Game Status: ${result.toString()} \n")
+            println("Received Game Status: $result \n")
             SwingUtilities.invokeLater {
                 // update Tournament Message Board, Game Message Board and score of winner
                 guiObject?.updateCurrentGameStatus()
@@ -784,5 +818,5 @@ fun getGameStatus() {
         } else {
             println("No Game Status received")
         }
-    })
+    }
 }

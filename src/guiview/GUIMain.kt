@@ -47,14 +47,14 @@ class GUIMain : JFrame("Nope Card Game") {
 
 
         val img = ImageIcon("bin/cover.png")
-        setIconImage(img.getImage())
+        iconImage = img.image
 
         // Show the window
         isVisible = true
 
         // Create a JPanel to hold the menu items
         menuPanel.layout = BoxLayout(menuPanel, BoxLayout.Y_AXIS)
-        menuPanel.setBackground(Color.WHITE)
+        menuPanel.background = Color.WHITE
 
         // Create a JLabel for the title
         val titleLabel = JLabel("Welcome to Nope!™")
@@ -73,7 +73,7 @@ class GUIMain : JFrame("Nope Card Game") {
             button.alignmentX = CENTER_ALIGNMENT
             button.preferredSize = Dimension(400,70)
             button.maximumSize = Dimension(800, 70)
-            button.setForeground(Color.BLACK)
+            button.foreground = Color.BLACK
             button.background = Color(233,196,183)
             button.isBorderPainted = false
 
@@ -241,7 +241,6 @@ class GUIMain : JFrame("Nope Card Game") {
         //topCardButton.preferredSize = Dimension(20, 240)
         topCardButton.icon = ImageIcon("bin/cover.png")
         topCardButton.background = Color(255,255,255)
-//        lastTopCardButton.preferredSize = Dimension(20, 240)
         lastTopCardButton.background = Color(255,255,255)
         lastTopCardButton.icon = ImageIcon("bin/cover.png")
         updateTopCards()
@@ -250,8 +249,6 @@ class GUIMain : JFrame("Nope Card Game") {
 
         gbc.gridx = 1
         gbc.gridy = 2
-//        gbc.weightx = 0.6
-
 
         tempPanel2.add(lastTopCardButton, gbc)
 
@@ -561,11 +558,7 @@ class GUIMain : JFrame("Nope Card Game") {
         tfName.border = BorderFactory.createEmptyBorder(0, 10, 0, 10)
         tfName.addActionListener {
             // check if there is an input of integer
-            if (tfName.text.matches(Regex("-?\\d+"))) {
-                createButton.isEnabled = true
-            } else {
-                createButton.isEnabled = false
-            }
+            createButton.isEnabled = tfName.text.matches(Regex("-?\\d+"))
         }
         createButton.addActionListener {
             val number = tfName.text.toIntOrNull()
@@ -584,7 +577,7 @@ class GUIMain : JFrame("Nope Card Game") {
 
                     updateCurrentTournamentList()
                     cardLayout.show(contentPane, "game lobby")
-                    tfName.text = "" // clear textfield
+                    tfName.text = "" // clear text field
                 } else{
                     showMessage(this,tournamentInfoStatus.error.toString(),4000)
                 }
@@ -604,27 +597,7 @@ class GUIMain : JFrame("Nope Card Game") {
         crTournamentPanel.add(returnButton2, BorderLayout.NORTH)
         crTournamentPanel.add(centerPanel, BorderLayout.CENTER)
     }
-    /*    private fun updateScoreTable() {
-            val jsonString = """
-                [
-                    {"name": "John", "score": 100},
-                    {"name": "Mary", "score": 90},
-                    {"name": "Bob", "score": 80},
-                    {"name": "Alice", "score": 70},
-                    {"name": "David", "score": 60}
-                ]
-            """.trimIndent()
 
-            val gson = Gson()
-            val typeToken = object : TypeToken<List<Score>>() {}.type
-            val scores = gson.fromJson<List<Score>>(jsonString, typeToken)
-
-            scores.sortedByDescending { it.score }
-                .forEach { score ->
-                    val model = scoreTable.model as DefaultTableModel
-                    model.addRow(arrayOf(score.name, score.score))
-                }
-        }*/
     private fun updateTournament(){
         val model = tournamentTable.model as DefaultTableModel
         val tempTournamentList = mutableListOf<Tournament>()
@@ -655,11 +628,7 @@ class GUIMain : JFrame("Nope Card Game") {
 
         tournamentTable.model= DefaultTableModel(arrayOf("Number", "ID", "Current Size", "Date", "status", "Players"), 0 )
         updateTournament()
-        if(inTournament == true){
-            tournamentTable.setEnabled(false)
-        }else{
-            tournamentTable.isEnabled = true
-        }
+        tournamentTable.isEnabled = inTournament != true
     }
 
     /**

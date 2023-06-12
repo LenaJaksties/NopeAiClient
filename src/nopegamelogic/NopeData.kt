@@ -1,6 +1,10 @@
 package nopegamelogic
 
+import kotlin.collections.ArrayList
 
+/**
+ * Data classes necessary for the nope game
+ */
 data class TournamentInfo(
     var tournamentId: String?,
     var bestOf: Int?,
@@ -83,11 +87,11 @@ data class Card(
     var selectedColor: Color?
 ){
     fun getType(): String {
-        return type.type.toLowerCase()
+        return type.type.lowercase()
     }
 
     fun getColor(): String {
-        return color.color.toLowerCase()
+        return color.color.lowercase()
     }
     fun getSelect():String{
         return select.toString()
@@ -108,7 +112,7 @@ data class Move(
     var reason: String
 ){
     fun getMoveType(): String {
-        return type.moveType.toLowerCase()
+        return type.moveType.lowercase()
     }
 }
 

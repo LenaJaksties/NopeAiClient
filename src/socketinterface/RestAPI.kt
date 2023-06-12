@@ -10,16 +10,18 @@ import com.google.gson.Gson
  * Http Requests - REST API code
  */
 
-class RestApi(){
-    fun registerUser(uName: String) {
+class RestApi {
+    /**
+     * registers a new user
+     */
+    fun registerUser(uName: String, uPassword:String, firstName:String, lastName:String): Boolean {
 
-        val registerOb = Register(uName,"busan1sBe3utiful","Lena","Jaksties")
+        val newUser = Register(uName,uPassword,firstName,lastName)
+        var registerSuccess = false
 
-        println("hi")
         val client = HttpClient.newHttpClient()
-
         val gson = Gson()
-        val jsonRequest = gson.toJson(registerOb)
+        val jsonRequest = gson.toJson(newUser)
 
         val request = HttpRequest.newBuilder()
             .uri(URI("https://nope-server.azurewebsites.net/api/auth/register"))
@@ -28,16 +30,21 @@ class RestApi(){
             .build()
 
         val postResponse = client.send(request, BodyHandlers.ofString())
-        println("Response - POST register")
+        println("Register Response: ")
         println(postResponse.body())
         if (postResponse.statusCode() == 200) {
-            print("lauft alles super")
+            print("User was registered correctly")
+            registerSuccess = true
         }
+        return registerSuccess
     }
 
-    fun userLogin(uName: String): Accesstoken?{
+    /**
+     * logs the user in to the server
+     */
+    fun userLogin(uName: String, uPassword:String): AccessToken? {
         // create Login Object with data and convert to Json with gson
-        val loginOb = Login(uName, "busan1sBe3utiful")
+        val loginOb = Login(uName, uPassword)
         val gson = Gson()
         val jsonLogRequest = gson.toJson(loginOb)
         val client = HttpClient.newHttpClient()
@@ -55,7 +62,7 @@ class RestApi(){
             val responseBody = loginResponse.body()
             val accessToken = extractAccessToken(responseBody)
             //store the token into class Token
-            val token = Accesstoken(accessToken)
+            val token = AccessToken(accessToken)
             println("Login Response: ")
             println(loginResponse.body())
             println(accessToken)
@@ -63,12 +70,11 @@ class RestApi(){
 
         }
         return null
-
     }
 
-    fun connect(access_token: Accesstoken){
+    fun connect(accessToken: AccessToken){
         // create Login Object with data and convert to Json with gson
-        val token = Token(access_token.accessToken.toString())
+        val token = Token(accessToken.accessToken.toString())
         val gson = Gson()
         val jsonAuthentication = gson.toJson(token)
         val client = HttpClient.newHttpClient()
@@ -86,39 +92,18 @@ class RestApi(){
         if (authenticationResponse.statusCode() == 200) {
             val responseBody = authenticationResponse.body()
             println("Authentication response: ")
-            println(authenticationResponse.body())
+            println(responseBody)
         }
 
     }
 
     /**
-     * extract the Tokenvalue from the original response body
+     * extract token from the original response body via regex matching
      */
-    fun extractAccessToken(responseBody: String): String? {
+    private fun extractAccessToken(responseBody: String): String? {
         val regex = "\"accessToken\":\"(.*?)\"".toRegex()
         val matchResult = regex.find(responseBody)
         return matchResult?.groupValues?.getOrNull(1)
     }
 
-//    fun getData(): String? {
-//        val accessToken = userLogin()
-//        if (accessToken == null) {
-//            return null
-//        }
-//
-//        val client = HttpClient.newBuilder()
-//
-//        val request = HttpRequest.newBuilder()
-//            .uri(URI.create("https://nope-server.azurewebsites.net/api/data"))
-//            .header("Content-Type", "application/json")
-//            .header("Authorization", "Bearer $accessToken")
-//            .GET()
-//            .build()
-//
-//        //val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-//        //if (response.statusCode() == 200) {
-//        //    return response.body()
-//        //}
-//        return null
-//    }
 }

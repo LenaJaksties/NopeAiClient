@@ -4,12 +4,9 @@ package nopegamelogic
 class AILogic{
 
     fun calculateTurn(turnData: GameState, aiPlayerName: String):Move{
-        val turnmove = Move(MoveType.PUT,null,null,null,"Because I can!")
-        // see card on top
-
-        println()
-        println("TopCard: ${turnData.topCard}")
-
+        val turnMove = Move(MoveType.PUT,null,null,null,"Because I can!")
+        // print card on top
+        println("\nTopCard: ${turnData.topCard}")
         // print hand
         println("My hand: ")
         for(i in 0 until turnData.hand!!.size){
@@ -21,31 +18,31 @@ class AILogic{
 
         // define Type of move
         if(fittingCardInDeck.isEmpty() && turnData.secondTurn == true) {
-            turnmove.type = MoveType.NOPE
+            turnMove.type = MoveType.NOPE
         } else if(fittingCardInDeck.isEmpty()){
-            turnmove.type = MoveType.TAKE
+            turnMove.type = MoveType.TAKE
         } else{
-            turnmove.type = MoveType.PUT
+            turnMove.type = MoveType.PUT
         }
 
-        if(turnmove.type == MoveType.PUT){
+        if(turnMove.type == MoveType.PUT){
 
             // select cards to send
             val cardsToSend = calculateSmartDecision(fittingCardInDeck, turnData, aiPlayerName)
             if(cardsToSend.isEmpty() || cardsToSend.size > 3){
                 println("Something Went Wrong Choosing a Card to Send")
             } else if(cardsToSend.size == 1){
-                turnmove.card1 = Card(cardsToSend[0].type, cardsToSend[0].color, cardsToSend[0].value,null,null,null)
+                turnMove.card1 = Card(cardsToSend[0].type, cardsToSend[0].color, cardsToSend[0].value,null,null,null)
             }else if(cardsToSend.size == 2){
-                turnmove.card1 = Card(cardsToSend[0].type, cardsToSend[0].color,  cardsToSend[0].value,null,null,null)
-                turnmove.card2 = Card(cardsToSend[1].type, cardsToSend[1].color,  cardsToSend[1].value,null,null,null)
+                turnMove.card1 = Card(cardsToSend[0].type, cardsToSend[0].color,  cardsToSend[0].value,null,null,null)
+                turnMove.card2 = Card(cardsToSend[1].type, cardsToSend[1].color,  cardsToSend[1].value,null,null,null)
             }else{
-                turnmove.card1 = Card(cardsToSend[0].type, cardsToSend[0].color, cardsToSend[0].value,null,null,null)
-                turnmove.card2 = Card(cardsToSend[1].type, cardsToSend[1].color, cardsToSend[1].value,null,null,null)
-                turnmove.card3 = Card(cardsToSend[2].type, cardsToSend[2].color, cardsToSend[2].value,null,null,null)
+                turnMove.card1 = Card(cardsToSend[0].type, cardsToSend[0].color, cardsToSend[0].value,null,null,null)
+                turnMove.card2 = Card(cardsToSend[1].type, cardsToSend[1].color, cardsToSend[1].value,null,null,null)
+                turnMove.card3 = Card(cardsToSend[2].type, cardsToSend[2].color, cardsToSend[2].value,null,null,null)
             }
         }
-        return turnmove
+        return turnMove
     }
     private fun findMatchingCards(handCards: ArrayList<Card>, lastCard: Card, preLastCard: Card?): ArrayList<ArrayList<Card>> {
 
@@ -95,7 +92,7 @@ class AILogic{
             }
         }else if(lastCard.type == Type.SELECTION){
             // use color of selection card or given special selection color when multi and special value color for amount of cards
-            var inputColor = Color.NULL;
+            var inputColor = Color.NULL
             if(lastCard.color != Color.MULTI){
                 // look for card color
                 inputColor = lastCard.color
@@ -194,7 +191,7 @@ class AILogic{
             for (j in i + 1 until colorMatchingCard.size) {
                 val card2 = colorMatchingCard[j]
                 if (checkSameColor(card, card2, lastCard)) {
-                    var tempCollocation = ArrayList<Card>()
+                    val tempCollocation = ArrayList<Card>()
                     tempCollocation.add(card)
                     tempCollocation.add(card2)
                     matchingCardCollocations.add(tempCollocation)
@@ -212,7 +209,7 @@ class AILogic{
                     val card3 = colorMatchingCard[k]
                     // check for same color
                     if (checkSameColor(card, card2, card3, lastCard)) {
-                        var tempCollocation = ArrayList<Card>()
+                        val tempCollocation = ArrayList<Card>()
                         tempCollocation.add(card)
                         tempCollocation.add(card2)
                         tempCollocation.add(card3)
@@ -257,7 +254,7 @@ class AILogic{
             val card1Colors = card.color.color.split("-")
             val card2Colors = card2.color.color.split("-")
             // Find the matching color between card1Colors and card2Colors and set matchingColor to the color or else to null
-            matchingColor = card1Colors.find { it in card2Colors }?.let { Color.valueOf(it.toUpperCase()) } ?: Color.NULL
+            matchingColor = card1Colors.find { it in card2Colors }?.let { Color.valueOf(it.uppercase()) } ?: Color.NULL
             }
 
         return matchingColor
@@ -274,7 +271,7 @@ class AILogic{
             val card1Colors = card.color.color.split("-")
             val card2Colors = topCardColor.color.split("-")
             // Find the matching color between card1Colors and card2Colors and set matchingColor to the color or else to null
-            matchingColor = card1Colors.find { it in card2Colors }?.let { Color.valueOf(it.toUpperCase()) } ?: Color.NULL
+            matchingColor = card1Colors.find { it in card2Colors }?.let { Color.valueOf(it.uppercase()) } ?: Color.NULL
         }
 
         return matchingColor
@@ -305,8 +302,8 @@ class AILogic{
             }
         }
         // get player hand of own ai-player and opponent
-        var myHandSize = 0
-        var opponentHandSize = 0
+        val myHandSize: Int
+        val opponentHandSize: Int
         if(turnData.players?.get(0)?.username == aiPlayerName){
             // found your own user
             myHandSize = turnData.players!![0].handSize!!
@@ -317,7 +314,7 @@ class AILogic{
             myHandSize = turnData.players!![1].handSize!!
         }
 
-        var colorAmount = Array(11){0}
+        val colorAmount = Array(11){0}
         for (x in 0 until (turnData.hand?.size ?: 0)){
             if(turnData.hand!![x].color == Color.RED){
                 colorAmount[0] ++
@@ -345,10 +342,10 @@ class AILogic{
                 println("Card didn't have a color value to use for comparison")
             }
         }
-        var redColorsInHand = colorAmount[0]+ colorAmount[4]+ colorAmount[7]+ colorAmount[8]+ colorAmount[10]
-        var blueColorsInHand = colorAmount[1]+ colorAmount[5]+ colorAmount[6]+ colorAmount[7]+ colorAmount[10]
-        var greenColorsInHand = colorAmount[2]+ colorAmount[6]+ colorAmount[8]+ colorAmount[9]+ colorAmount[10]
-        var yellowColorsInHand = colorAmount[3]+ colorAmount[4]+ colorAmount[6]+ colorAmount[9]+ colorAmount[10]
+        val redColorsInHand = colorAmount[0]+ colorAmount[4]+ colorAmount[7]+ colorAmount[8]+ colorAmount[10]
+        val blueColorsInHand = colorAmount[1]+ colorAmount[5]+ colorAmount[6]+ colorAmount[7]+ colorAmount[10]
+        val greenColorsInHand = colorAmount[2]+ colorAmount[6]+ colorAmount[8]+ colorAmount[9]+ colorAmount[10]
+        val yellowColorsInHand = colorAmount[3]+ colorAmount[4]+ colorAmount[6]+ colorAmount[9]+ colorAmount[10]
 
         var colorMostInHand = Color.NULL
         if(redColorsInHand >= blueColorsInHand && redColorsInHand >= greenColorsInHand && redColorsInHand >= yellowColorsInHand){
@@ -365,8 +362,6 @@ class AILogic{
         }
 
         // make priority List depending on user hand size
-        var priorityCardPossibilities = ArrayList< ArrayList<Card>>()
-
         if(myHandSize <=5){
             /*
             Priority:
@@ -461,7 +456,6 @@ class AILogic{
                 bestMoveCards = applyPriorityValue("Single-Color",3, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
             }
 
-
         } else if(myHandSize > 5 && opponentHandSize <=3){
             /*
             Priority:
@@ -493,7 +487,6 @@ class AILogic{
                 bestMoveCards = applyPriorityValue("Single-Color",3, fittingCardInDeck, turnData, bestMoveCards, colorMostInHand)
             }
 
-
         }else{
             print("my hand size or Opponent hand size not found for comparison")
             bestMoveCards.addAll(fittingCardInDeck[0])
@@ -505,6 +498,11 @@ class AILogic{
         return bestMoveCards
     }
 
+    /**
+     * Prioritises an input list of card possibilities for 2 criteria:
+     * 1. chose a possibility where own player doesn't have a match for
+     * 2. chose a possibility where colors are sent where player has the most of
+     */
     private fun applyPriorityValue(
         filterType: String,
         filterValue: Int,
@@ -516,24 +514,24 @@ class AILogic{
         var priorityCardPossibilities = ArrayList< ArrayList<Card>>()
         priorityCardPossibilities = filterPossibilityList(fittingCardInDeck, filterType, filterValue, priorityCardPossibilities)
         if (priorityCardPossibilities.isNotEmpty()) {
-            // print possibilities:
-
-
             // select best move possibility to send
+            // priority 1: send a card where own player can't lay a card on
             priorityCardPossibilities = sortListBy(filterValue, priorityCardPossibilities)
             for(i in 0 until priorityCardPossibilities.size){
+                // print possibilities:
                 print("Priority Values: ")
                 for(j in 0 until priorityCardPossibilities[i].size){
                     print("(${priorityCardPossibilities[i][j].type}  ${priorityCardPossibilities[i][j].color}  ${priorityCardPossibilities[i][j].value}) \t\t")
 
                 }
-                print("\n")
+                println("")
             }
+            // check last card in sorted possibility list
             for (i in 0 until priorityCardPossibilities.size) {
-                var hasMatch = ArrayList<ArrayList<Card>>()
+                var hasMatch: ArrayList<ArrayList<Card>>
                 hasMatch = findMatchingCards(turnData.hand!!, priorityCardPossibilities[i].last(), null)
                 if (hasMatch.size == 0) {
-                    // found match where own player cant put a card on
+                    // found match where own player can't put a card on
                     bestMoveCards.addAll(priorityCardPossibilities[i])
                     return bestMoveCards
                 }
@@ -545,11 +543,11 @@ class AILogic{
             // check if the card before the last card has the same type and should be sent last
             for(i in 0 until priorityCardPossibilities.size){
                 if(priorityCardPossibilities[i].size > 1){
-                    var lastCard = priorityCardPossibilities[i].last()
+                    val lastCard = priorityCardPossibilities[i].last()
                     for(j in priorityCardPossibilities[i].size -2 downTo 0){
                         // check if conditions are met
                         if(priorityCardPossibilities[i][j].value == lastCard.value && priorityCardPossibilities[i][j].type == lastCard.type && (priorityCardPossibilities[i][j].color == lastCard.color || priorityCardPossibilities[i][j].color in twoTypeColors && lastCard.color in twoTypeColors || priorityCardPossibilities[i][j].color !in twoTypeColors && lastCard.color !in twoTypeColors)){
-                            var hasMatch = ArrayList<ArrayList<Card>>()
+                            var hasMatch: ArrayList<ArrayList<Card>>
                             hasMatch = findMatchingCards(turnData.hand!!, priorityCardPossibilities[i][j], null)
                             if (hasMatch.size == 0) {
                                 // found match where own player cant put a card on
@@ -559,12 +557,12 @@ class AILogic{
                                 return bestMoveCards
                             }
                         }
-
                     }
                 }
-
             }
+            // priority 2: send a card with the color where own player has the most cards of (increase possibility to still have different colors)
             for (i in 0 until priorityCardPossibilities.size) {
+                // check last card in possibility list
                 if (colorMostInHand.color in priorityCardPossibilities[i].last().color.color || colorMostInHand.color == priorityCardPossibilities[i].last().color.color) {
                     // found match for color that own player has most
                     bestMoveCards.addAll(priorityCardPossibilities[i])
@@ -572,7 +570,7 @@ class AILogic{
                 }
                 // check other cards in current possibility
                 if(priorityCardPossibilities[i].size > 1){
-                    var lastCard = priorityCardPossibilities[i].last()
+                    val lastCard = priorityCardPossibilities[i].last()
                     for(j in priorityCardPossibilities[i].size -2 downTo 0){
                         // check if conditions are met
                         if(priorityCardPossibilities[i][j].value == lastCard.value && priorityCardPossibilities[i][j].type == lastCard.type && (priorityCardPossibilities[i][j].color == lastCard.color || priorityCardPossibilities[i][j].color in twoTypeColors && lastCard.color in twoTypeColors || priorityCardPossibilities[i][j].color !in twoTypeColors && lastCard.color !in twoTypeColors)){
@@ -585,11 +583,10 @@ class AILogic{
                                 return bestMoveCards
                             }
                         }
-
                     }
                 }
-
             }
+            // no priority matched send first possible move
             bestMoveCards.addAll(priorityCardPossibilities[0])
             return bestMoveCards
         }else{
@@ -639,26 +636,26 @@ class AILogic{
                     // find possibilities with double value cards
                     if (fittingCardInDeck[i][j].color in twoTypeColors && fittingCardInDeck[i][j].value == filterValue) {
 
-                        var tempCollocation = ArrayList<Card>()
+                        val tempCollocation = ArrayList<Card>()
                         tempCollocation.addAll(fittingCardInDeck[i])
                         priorityCardPossibilities.add(tempCollocation)
-                        break;
+                        break
                     }
                 }else if(filterType == "Single-Color"){
                     if (fittingCardInDeck[i][j].color !in twoTypeColors && fittingCardInDeck[i][j].value == filterValue) {
 
-                        var tempCollocation = ArrayList<Card>()
+                        val tempCollocation = ArrayList<Card>()
                         tempCollocation.addAll(fittingCardInDeck[i])
                         priorityCardPossibilities.add(tempCollocation)
-                        break;
+                        break
                     }
                 }else if(filterType == "Joker"){
                     if (fittingCardInDeck[i][j].type == Type.JOKER && fittingCardInDeck[i][j].value == filterValue) {
 
-                        var tempCollocation = ArrayList<Card>()
+                        val tempCollocation = ArrayList<Card>()
                         tempCollocation.addAll(fittingCardInDeck[i])
                         priorityCardPossibilities.add(tempCollocation)
-                        break;
+                        break
                     }
 
                 }else{
@@ -723,7 +720,7 @@ class AILogic{
 
             priorityCardPossibilities[x].clear()
             priorityCardPossibilities[x].addAll(tempCardListWithNull)
-
+            // sort new list depending on input value
             if(number == 0){
                 priorityCardPossibilities[x].addAll(tempCardListWith3)
                 priorityCardPossibilities[x].addAll(tempCardListWith3DoubleColor)

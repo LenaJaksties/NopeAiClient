@@ -23,7 +23,14 @@ fun main() {
     while(!loggedIn){
         println("Welcome to Nope - You need to log in before you can play:")
         println("1: Register \n2: Login")
-        val choice = scanner.nextInt()
+        val input = scanner.nextLine()
+
+        val choice = input.toIntOrNull()
+
+        if (choice == null) {
+            println("Invalid choice. You have to enter a Number")
+            continue
+        }
         when(choice){
             1 -> {
                 println("Registration:")
